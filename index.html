@@ -316,7 +316,7 @@ html,body{
     <div class="lesson-box">
       <h3>Lesson 1: Notations</h3>
       <p><b>F/R/B/L/U/D</b> = Snap + reorient cube.</p>
-      <p><b>Buttons = fixed physical faces</b> (R always turns the right face, etc.).</p>
+      <p><b>Buttons = screen-relative</b> (R = screen-right always).</p>
     </div>
     <button class="pop-btn" onclick="scramble()">Scramble</button>
     <button class="pop-btn" style="font-size:0.8rem" onclick="playDemo()">Demo: R</button>
@@ -354,9 +354,10 @@ let scene, camera, renderer;
 let cubies = [];
 let cubeGroup = new THREE.Group();
 let isRotating = false;
-let zoomDistance = 12; // starting distance from cube
+let zoomDistance = 12;
 const minZoom = 5;
 const maxZoom = 25;
+let cubeOrientation = new THREE.Quaternion();
 
 const standardViews = {
   front:{ cameraPos:[0,3,12], cubeRot:[0,0,0] },
@@ -366,6 +367,42 @@ const standardViews = {
   up: { cameraPos:[0,12,3], cubeRot:[-Math.PI/2,0,0] },
   down: { cameraPos:[0,-12,3], cubeRot:[Math.PI/2,0,0] }
 };
+
+const SCREEN_RIGHT = new THREE.Vector3(1, 0, 0);
+const SCREEN_UP = new THREE.Vector3(0, 1, 0);
+const SCREEN_OUT = new THREE.Vector3(0, 0, 1);
+
+// screenDirName: 'right' | 'left' | 'up' | 'down' | 'front' | 'back'
+function getCubeAxisForScreenDirection(screenDirName) {
+  let dirWorld = new THREE.Vector3();
+  switch (screenDirName) {
+    case 'right': dirWorld.copy(SCREEN_RIGHT); break;
+    case 'left': dirWorld.copy(SCREEN_RIGHT).negate(); break;
+    case 'up': dirWorld.copy(SCREEN_UP); break;
+    case 'down': dirWorld.copy(SCREEN_UP).negate(); break;
+    case 'front': dirWorld.copy(SCREEN_OUT); break;
+    case 'back': dirWorld.copy(SCREEN_OUT).negate(); break;
+    default: return null;
+  }
+  // world → cube local
+  const inv = cubeOrientation.clone().invert();
+  dirWorld.applyQuaternion(inv);
+  const ax = Math.abs(dirWorld.x);
+  const ay = Math.abs(dirWorld.y);
+  const az = Math.abs(dirWorld.z);
+  let axisName, layerSign;
+  if (ax >= ay && ax >= az) {
+    axisName = 'x';
+    layerSign = dirWorld.x >= 0 ? 1 : -1;
+  } else if (ay >= ax && ay >= az) {
+    axisName = 'y';
+    layerSign = dirWorld.y >= 0 ? 1 : -1;
+  } else {
+    axisName = 'z';
+    layerSign = dirWorld.z >= 0 ? 1 : -1;
+  }
+  return { axisName, layerSign };
+}
 
 /* pages */
 function goPage(id){
@@ -535,18 +572,20 @@ function screenMove(move) {
     prime = true;
     move = move.replace('_prime', '');
   }
-  let axis, layerSign;
-  // Fixed world mapping:
-  // x+: right, x-: left; y+: up, y-: down; z+: front, z-: back
+  let screenDir;
   switch (move) {
-    case 'R': axis = 'x'; layerSign = 1; break;
-    case 'L': axis = 'x'; layerSign = -1; break;
-    case 'U': axis = 'y'; layerSign = 1; break;
-    case 'D': axis = 'y'; layerSign = -1; break;
-    case 'F': axis = 'z'; layerSign = 1; break;
-    case 'B': axis = 'z'; layerSign = -1; break;
+    case 'R': screenDir = 'right'; break;
+    case 'L': screenDir = 'left'; break;
+    case 'U': screenDir = 'up'; break;
+    case 'D': screenDir = 'down'; break;
+    case 'F': screenDir = 'front'; break;
+    case 'B': screenDir = 'back'; break;
     default: return;
   }
+  const mapping = getCubeAxisForScreenDirection(screenDir);
+  if (!mapping) return;
+  const axis = mapping.axisName;
+  const layerSign = mapping.layerSign;
   handleMove(axis, layerSign, prime);
 }
 
@@ -558,7 +597,6 @@ function handleMove(axis, layerSign, prime) {
   cubies.forEach(cubie => {
     const worldPos = new THREE.Vector3();
     cubie.getWorldPosition(worldPos);
-    // Only cubies on the chosen face layer
     if (Math.round(worldPos[axis]) === layerSign) {
       pivot.attach(cubie);
       movingCubies.push(cubie);
@@ -600,6 +638,7 @@ function onMouseWheel(event) {
 function resetView(){ snapAndReorient('front'); }
 function animate(){
   requestAnimationFrame(animate);
+  cubeOrientation.copy(cubeGroup.quaternion);
   camera.lookAt(0,0,0);
   renderer.render(scene,camera);
 }
