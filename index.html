@@ -18,16 +18,57 @@ body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000;
 
 #main-app { display: none; width: 100vw; height: 100vh; display: grid; grid-template-columns: 320px 1fr; }
 #sidebar { background: rgba(0, 10, 0, 0.95); border-right: 1px solid var(--neon); padding: 25px; display: flex; flex-direction: column; box-sizing: border-box; }
-#cube-container { position: relative; width: 100%; height: 100%; touch-action: none; cursor: grab; }
-#cube-container:active { cursor: grabbing; }
+#cube-container { position: relative; width: 100%; height: 100%; touch-action: none; }
 
 .lesson-box { background: #002200; border: 1px solid var(--neon); padding: 15px; margin-top: 20px; font-size: 0.85rem; }
 .warning-red { color: #ff3333; font-weight: bold; border: 1px solid #ff3333; padding: 5px; margin: 10px 0; }
 
-.axis-controls { position: absolute; top: 20px; left: 20px; display: flex; flex-direction: column; gap: 8px; z-index: 100; }
-.axis-btn { width: 55px; height: 55px; background: #001100; border: 2px solid var(--neon); color: var(--neon); font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
-.axis-btn:hover:not(.disabled) { background: var(--neon); color: black; box-shadow: 0 0 15px var(--neon); }
-.axis-btn.disabled { opacity: 0.4; cursor: not-allowed; border-color: #666; }
+/* CAMERA ARROW CONTROLS */
+.camera-controls { 
+  position: absolute; 
+  top: 50%; 
+  left: 20px; 
+  transform: translateY(-50%); 
+  display: flex; 
+  flex-direction: column; 
+  gap: 10px; 
+  z-index: 100; 
+}
+.camera-row { display: flex; gap: 10px; }
+.camera-btn { 
+  width: 50px; height: 50px; 
+  background: #001100; 
+  border: 2px solid var(--neon); 
+  color: var(--neon); 
+  font-size: 1.4rem; 
+  cursor: pointer; 
+  transition: 0.2s; 
+  display: flex; align-items: center; justify-content: center; 
+}
+.camera-btn:hover { background: var(--neon); color: black; box-shadow: 0 0 15px var(--neon); }
+
+/* MOVE BUTTONS */
+.move-controls { 
+  position: absolute; 
+  top: 20px; 
+  right: 20px; 
+  display: flex; 
+  flex-direction: column; 
+  gap: 8px; 
+  z-index: 100; 
+}
+.move-btn { 
+  width: 55px; height: 55px; 
+  background: #001100; 
+  border: 2px solid var(--neon); 
+  color: var(--neon); 
+  font-size: 1.1rem; 
+  font-weight: bold; 
+  cursor: pointer; 
+  transition: 0.2s; 
+  display: flex; align-items: center; justify-content: center; 
+}
+.move-btn:hover { background: var(--neon); color: black; box-shadow: 0 0 15px var(--neon); }
 </style>
 </head>
 <body>
@@ -60,21 +101,34 @@ body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000;
 <h2 id="method-title">SYSTEM</h2>
 <div class="lesson-box">
 <h3>Lesson 1: Notations</h3>
-<p><b>R/R' F/F' U/U'</b> = Twist layers (ALWAYS works)</p>
-<p><b>Hold & drag</b> = Free camera orbit (UNLIMITED)</p>
+<p><b>Left arrows</b> = Move camera view</p>
+<p><b>Right buttons</b> = R/F/U moves</p>
 </div>
 <button class="pop-btn" style="margin-top:auto" onclick="scramble()">SCRAMBLE</button>
 <button class="pop-btn" style="font-size:0.8rem" onclick="playDemo()">DEMO: R</button>
 <button class="pop-btn" style="font-size:0.8rem" onclick="resetView()">RESET VIEW</button>
 </div>
 <div id="cube-container">
-<div class="axis-controls">
-<button class="axis-btn" onclick="doMove('x', false)">R</button>
-<button class="axis-btn" onclick="doMove('x', true)">R'</button>
-<button class="axis-btn" onclick="doMove('z', false)">F</button>
-<button class="axis-btn" onclick="doMove('z', true)">F'</button>
-<button class="axis-btn" onclick="doMove('y', false)">U</button>
-<button class="axis-btn" onclick="doMove('y', true)">U'</button>
+<!-- LEFT SIDE: CAMERA ARROWS -->
+<div class="camera-controls">
+<div class="camera-row">
+<button class="camera-btn" onclick="cameraLeft()">◀</button>
+<button class="camera-btn" onclick="cameraRight()">▶</button>
+</div>
+<div class="camera-row">
+<button class="camera-btn" onclick="cameraUp()">▲</button>
+<button class="camera-btn" onclick="cameraDown()">▼</button>
+</div>
+</div>
+
+<!-- RIGHT SIDE: MOVE BUTTONS -->
+<div class="move-controls">
+<button class="move-btn" onclick="doMove('x', false)">R</button>
+<button class="move-btn" onclick="doMove('x', true)">R'</button>
+<button class="move-btn" onclick="doMove('z', false)">F</button>
+<button class="move-btn" onclick="doMove('z', true)">F'</button>
+<button class="move-btn" onclick="doMove('y', false)">U</button>
+<button class="move-btn" onclick="doMove('y', true)">U'</button>
 </div>
 </div>
 </div>
@@ -83,11 +137,8 @@ body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000;
 let scene, camera, renderer;
 let cubies = [], cubeGroup = new THREE.Group();
 let isRotating = false;
-let isDragging = false;
-let dragStart = new THREE.Vector2();
-let spherical = new THREE.Spherical();
-let lastMouseX = 0, lastMouseY = 0;
-// REMOVED viewMoves restriction completely
+let cameraPhi = Math.PI * 0.4;
+let cameraTheta = Math.PI * 0.3;
 
 function goPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -107,9 +158,7 @@ function setup3D() {
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
   
-  // Initial camera position
-  spherical.set(8, Math.PI * 0.3, Math.PI * 0.4);
-  camera.position.setFromSpherical(spherical);
+  updateCameraPosition();
   
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setSize(container.clientWidth, container.clientHeight);
@@ -138,53 +187,27 @@ function setup3D() {
     }
   }
   
-  setupCameraControls(container);
-  animate();
-}
-
-function setupCameraControls(container) {
-  // **UNLIMITED HOLD & DRAG** - No restrictions
-  container.addEventListener('pointerdown', (e) => {
-    isDragging = true;
-    lastMouseX = e.clientX;
-    lastMouseY = e.clientY;
-    container.style.cursor = 'grabbing';
-    e.preventDefault();
-  });
-  
-  container.addEventListener('pointermove', (e) => {
-    if (!isDragging) return;
-    
-    const deltaX = (e.clientX - lastMouseX) * 0.01; // Super smooth
-    const deltaY = (e.clientY - lastMouseY) * 0.01;
-    
-    // **COMPLETELY FREE CAMERA MOVEMENT**
-    spherical.phi += deltaX;
-    spherical.theta += deltaY;
-    spherical.theta = Math.max(0.01, Math.min(Math.PI - 0.01, spherical.theta));
-    
-    camera.position.setFromSpherical(spherical);
-    
-    lastMouseX = e.clientX;
-    lastMouseY = e.clientY;
-  });
-  
-  container.addEventListener('pointerup', () => {
-    isDragging = false;
-    container.style.cursor = 'grab';
-  });
-  
-  container.addEventListener('pointerleave', () => {
-    isDragging = false;
-    container.style.cursor = 'grab';
-  });
-  
   window.addEventListener('resize', () => {
     camera.aspect = container.clientWidth / container.clientHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(container.clientWidth, container.clientHeight);
   });
+  
+  animate();
 }
+
+function updateCameraPosition() {
+  const radius = 8;
+  camera.position.x = radius * Math.sin(cameraPhi) * Math.cos(cameraTheta);
+  camera.position.y = radius * Math.sin(cameraTheta);
+  camera.position.z = radius * Math.cos(cameraPhi) * Math.cos(cameraTheta);
+}
+
+// **SIMPLE ARROW CAMERA CONTROLS**
+function cameraLeft() { cameraPhi += 0.4; updateCameraPosition(); }
+function cameraRight() { cameraPhi -= 0.4; updateCameraPosition(); }
+function cameraUp() { cameraTheta -= 0.4; cameraTheta = Math.max(0.1, cameraTheta); updateCameraPosition(); }
+function cameraDown() { cameraTheta += 0.4; cameraTheta = Math.min(Math.PI - 0.1, cameraTheta); updateCameraPosition(); }
 
 function doMove(axis, prime) {
   if (isRotating) return;
@@ -228,16 +251,13 @@ function handleMove(axis, prime) {
   });
 }
 
-// **REMOVED ALL BUTTON DISABLING** - Buttons always work
-
 function resetView() {
-  gsap.to(spherical, {
-    phi: Math.PI * 0.4,
-    theta: Math.PI * 0.3,
+  gsap.to({}, {
     duration: 0.8,
-    ease: "power2.inOut",
     onUpdate: () => {
-      camera.position.setFromSpherical(spherical);
+      cameraPhi = Math.PI * 0.4;
+      cameraTheta = Math.PI * 0.3;
+      updateCameraPosition();
     }
   });
 }
