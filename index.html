@@ -7,14 +7,14 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
 <style>
-:root { --neon:#00ff00; --bg:#000; }
+:root { --neon:#00ff55; --bg:#020605; }
 * { box-sizing:border-box; }
 html,body{
   margin:0;
   padding:0;
   width:100%;
   height:100%;
-  background:#000;
+  background:var(--bg);
   color:var(--neon);
   font-family:"Courier New",monospace;
   overflow:hidden;
@@ -24,7 +24,7 @@ html,body{
   position:fixed;
   inset:0;
   z-index:10;
-  background:#000;
+  background:var(--bg);
   display:flex;
   justify-content:center;
   align-items:center;
@@ -35,8 +35,8 @@ html,body{
   border:2px solid var(--neon);
   padding:40px;
   max-width:500px;
-  background:#001100;
-  box-shadow:0 0 30px rgba(0,255,0,0.3);
+  background:#002500;
+  box-shadow:0 0 30px rgba(0,255,85,0.3);
 }
 .page.active{display:block;}
 .pop-btn{
@@ -70,14 +70,14 @@ html,body{
 }
 /* sidebar */
 #sidebar{
-  background:rgba(0,10,0,0.95);
+  background:rgba(0,40,0,0.97);
   border-right:1px solid var(--neon);
   padding:20px;
   display:flex;
   flex-direction:column;
 }
 .lesson-box{
-  background:#002200;
+  background:#002500;
   border:1px solid var(--neon);
   padding:12px;
   font-size:0.85rem;
@@ -180,6 +180,7 @@ html,body{
     <h1>How Do You Want to Learn?</h1>
     <button class="pop-btn" onclick="goPage('p-coach')"> Guided Coach Mode </button>
     <button class="pop-btn" onclick="goPage('p-formulas')"> Formula Roadmap </button>
+    <button class="pop-btn" onclick="goPage('p-mode')">◀ Back</button>
   </div>
   <div id="p-coach" class="page">
     <h1>Guided Coach Mode</h1>
@@ -395,7 +396,7 @@ function initInteractiveCube() {
   document.getElementById('overlay').style.display = 'none';
   document.getElementById('main-app').style.display = 'grid';
   document.getElementById('method-title').innerText = "Interactive Cube";
-  setup3D(); // same as now
+  setup3D();
 }
 function startBeginnerCourse() {
   document.getElementById('overlay').style.display = 'none';
@@ -549,8 +550,7 @@ function screenMove(move) {
     prime = true;
     move = move.replace('_prime', '');
   }
-  // move is now 'R','L','U','D','F','B'
-  // interpret them as screen directions
+  // convert R/L/U/D/F/B to screen directions
   let baseDir;
   switch (move) {
     case 'R': baseDir = 'right'; break;
@@ -563,7 +563,6 @@ function screenMove(move) {
   }
   const axisMap = getScreenToWorldMapping(currentTargetFace);
   const axis = axisMap[baseDir];
-  // which side of that axis is the visible “face”
   const positive = (baseDir === 'right' || baseDir === 'front' || baseDir === 'up');
   const layerSign = positive ? 1 : -1;
   handleMove(axis, layerSign, prime);
