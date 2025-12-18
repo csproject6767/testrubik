@@ -60,8 +60,8 @@ body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000;
 <h2 id="method-title">SYSTEM</h2>
 <div class="lesson-box">
 <h3>Lesson 1: Notations</h3>
-<p><b>R/R' F/F' U/U'</b> = Twist layers</p>
-<p><b>Hold & drag</b> = Free camera orbit</p>
+<p><b>R/R' F/F' U/U'</b> = Twist layers (ALWAYS works)</p>
+<p><b>Hold & drag</b> = Free camera orbit (UNLIMITED)</p>
 </div>
 <button class="pop-btn" style="margin-top:auto" onclick="scramble()">SCRAMBLE</button>
 <button class="pop-btn" style="font-size:0.8rem" onclick="playDemo()">DEMO: R</button>
@@ -86,9 +86,8 @@ let isRotating = false;
 let isDragging = false;
 let dragStart = new THREE.Vector2();
 let spherical = new THREE.Spherical();
-let viewMoves = 0;
-const MAX_MOVES = 3;
 let lastMouseX = 0, lastMouseY = 0;
+// REMOVED viewMoves restriction completely
 
 function goPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -144,38 +143,30 @@ function setup3D() {
 }
 
 function setupCameraControls(container) {
-  // **HOLD TO DRAG** - Only moves while actively dragging
+  // **UNLIMITED HOLD & DRAG** - No restrictions
   container.addEventListener('pointerdown', (e) => {
     isDragging = true;
-    dragStart.set(e.clientX, e.clientY);
     lastMouseX = e.clientX;
     lastMouseY = e.clientY;
     container.style.cursor = 'grabbing';
+    e.preventDefault();
   });
   
   container.addEventListener('pointermove', (e) => {
-    if (!isDragging) return; // **ONLY when holding**
+    if (!isDragging) return;
     
-    const deltaX = (e.clientX - lastMouseX) * 0.008; // Smoother sensitivity
-    const deltaY = (e.clientY - lastMouseY) * 0.008;
+    const deltaX = (e.clientX - lastMouseX) * 0.01; // Super smooth
+    const deltaY = (e.clientY - lastMouseY) * 0.01;
     
-    // Update camera orbit - MUCH FREER MOVEMENT
+    // **COMPLETELY FREE CAMERA MOVEMENT**
     spherical.phi += deltaX;
     spherical.theta += deltaY;
-    spherical.theta = Math.max(0.01, Math.min(Math.PI - 0.01, spherical.theta)); // Full range
+    spherical.theta = Math.max(0.01, Math.min(Math.PI - 0.01, spherical.theta));
     
     camera.position.setFromSpherical(spherical);
     
     lastMouseX = e.clientX;
     lastMouseY = e.clientY;
-    
-    // Count moves more generously
-    if (Math.abs(deltaX) > 0.02 || Math.abs(deltaY) > 0.02) {
-      if (viewMoves < MAX_MOVES) {
-        viewMoves = Math.min(MAX_MOVES, viewMoves + 1);
-        updateButtons();
-      }
-    }
   });
   
   container.addEventListener('pointerup', () => {
@@ -183,7 +174,6 @@ function setupCameraControls(container) {
     container.style.cursor = 'grab';
   });
   
-  // Prevent drag outside container
   container.addEventListener('pointerleave', () => {
     isDragging = false;
     container.style.cursor = 'grab';
@@ -238,16 +228,7 @@ function handleMove(axis, prime) {
   });
 }
 
-function updateButtons() {
-  const buttons = document.querySelectorAll('.axis-btn');
-  buttons.forEach(btn => {
-    if (viewMoves >= MAX_MOVES) {
-      btn.classList.add('disabled');
-    } else {
-      btn.classList.remove('disabled');
-    }
-  });
-}
+// **REMOVED ALL BUTTON DISABLING** - Buttons always work
 
 function resetView() {
   gsap.to(spherical, {
@@ -257,10 +238,6 @@ function resetView() {
     ease: "power2.inOut",
     onUpdate: () => {
       camera.position.setFromSpherical(spherical);
-    },
-    onComplete: () => {
-      viewMoves = 0;
-      updateButtons();
     }
   });
 }
