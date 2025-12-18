@@ -307,20 +307,6 @@ html,body{
     </div>
     <button class="pop-btn" onclick="goPage('p-formulas')">◀ Back</button>
   </div>
-  <div id="p-warn" class="page">
-    <h1 style="color:#ff3333">⚠ BEWARE ⚠</h1>
-    <div class="warning-red">Patience is required</div>
-    <p>Mastering the cube takes hours of practice. Do not expect instant results.</p>
-    <button class="pop-btn" onclick="goPage('p-method')">I have patience</button>
-  </div>
-  <div id="p-method" class="page">
-    <h1>Select method</h1>
-    <p><b>CFOP:</b> Fast, pro-level, hard to memorize.</p>
-    <button class="pop-btn" onclick="initApp('CFOP')">Choose CFOP</button>
-    <hr style="border-color:var(--neon)">
-    <p><b>BEGINNER:</b> Simple layer-by-layer.</p>
-    <button class="pop-btn" onclick="initApp('Beginner')">Choose Beginner</button>
-  </div>
 </div>
 <!-- MAIN APP -->
 <div id="main-app">
@@ -380,6 +366,19 @@ const standardViews = {
   up: { cameraPos:[0,12,3], cubeRot:[-Math.PI/2,0,0] },
   down: { cameraPos:[0,-12,3], cubeRot:[Math.PI/2,0,0] }
 };
+
+// Map screen directions to world axes depending on the current snapped view
+function getScreenToWorldMapping(view) {
+  const maps = {
+    front: { right: 'x', left: 'x', up: 'y', down: 'y', front: 'z', back: 'z' },
+    right: { right: 'z', left: 'z', up: 'y', down: 'y', front: 'x', back: 'x' },
+    back: { right: 'x', left: 'x', up: 'y', down: 'y', front: 'z', back: 'z' },
+    left: { right: 'z', left: 'z', up: 'y', down: 'y', front: 'x', back: 'x' },
+    up: { right: 'z', left: 'z', up: 'y', down: 'y', front: 'x', back: 'x' },
+    down: { right: 'z', left: 'z', up: 'y', down: 'y', front: 'x', back: 'x' }
+  };
+  return maps[view] || maps.front;
+}
 
 /* pages */
 function goPage(id){
@@ -543,26 +542,30 @@ function snapAndReorient(targetFace) {
   currentTargetFace = targetFace;
 }
 
-// Very simple: one move = one 1/4 turn of a fixed face
 function screenMove(move) {
   if (isRotating) return;
-  // move is one of: 'F','F_prime','R','R_prime','L','L_prime','U','U_prime','D','D_prime','B','B_prime'
-  let axis, layerSign, prime = false;
+  let prime = false;
   if (move.endsWith('_prime')) {
     prime = true;
     move = move.replace('_prime', '');
   }
-  // WORLD-AXIS MAPPING (fixed cube):
-  // x+: right, x-: left, y+: up, y-: down, z+: front, z-: back
+  // move is now 'R','L','U','D','F','B'
+  // interpret them as screen directions
+  let baseDir;
   switch (move) {
-    case 'R': axis = 'x'; layerSign = 1; break;
-    case 'L': axis = 'x'; layerSign = -1; break;
-    case 'U': axis = 'y'; layerSign = 1; break;
-    case 'D': axis = 'y'; layerSign = -1; break;
-    case 'F': axis = 'z'; layerSign = 1; break;
-    case 'B': axis = 'z'; layerSign = -1; break;
+    case 'R': baseDir = 'right'; break;
+    case 'L': baseDir = 'left'; break;
+    case 'U': baseDir = 'up'; break;
+    case 'D': baseDir = 'down'; break;
+    case 'F': baseDir = 'front'; break;
+    case 'B': baseDir = 'back'; break;
     default: return;
   }
+  const axisMap = getScreenToWorldMapping(currentTargetFace);
+  const axis = axisMap[baseDir];
+  // which side of that axis is the visible “face”
+  const positive = (baseDir === 'right' || baseDir === 'front' || baseDir === 'up');
+  const layerSign = positive ? 1 : -1;
   handleMove(axis, layerSign, prime);
 }
 
