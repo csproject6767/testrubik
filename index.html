@@ -23,31 +23,29 @@ body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000;
 .lesson-box { background: #002200; border: 1px solid var(--neon); padding: 15px; margin-top: 20px; font-size: 0.85rem; }
 .warning-red { color: #ff3333; font-weight: bold; border: 1px solid #ff3333; padding: 5px; margin: 10px 0; }
 
-/* CAMERA ARROW CONTROLS */
-.camera-controls { 
+/* FIXED CAMERA ARROWS - LEFT SIDE */
+.camera-arrows { 
   position: absolute; 
   top: 50%; 
   left: 20px; 
   transform: translateY(-50%); 
-  display: flex; 
-  flex-direction: column; 
-  gap: 10px; 
+  display: grid; 
+  grid-template-columns: 1fr 1fr; 
+  gap: 8px; 
   z-index: 100; 
 }
-.camera-row { display: flex; gap: 10px; }
 .camera-btn { 
-  width: 50px; height: 50px; 
+  width: 55px; height: 55px; 
   background: #001100; 
   border: 2px solid var(--neon); 
   color: var(--neon); 
-  font-size: 1.4rem; 
+  font-size: 1.5rem; 
   cursor: pointer; 
   transition: 0.2s; 
-  display: flex; align-items: center; justify-content: center; 
 }
-.camera-btn:hover { background: var(--neon); color: black; box-shadow: 0 0 15px var(--neon); }
+.camera-btn:hover { background: var(--neon); color: black; box-shadow: 0 0 20px var(--neon); }
 
-/* MOVE BUTTONS */
+/* MOVE BUTTONS - RIGHT SIDE */
 .move-controls { 
   position: absolute; 
   top: 20px; 
@@ -101,27 +99,23 @@ body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000;
 <h2 id="method-title">SYSTEM</h2>
 <div class="lesson-box">
 <h3>Lesson 1: Notations</h3>
-<p><b>Left arrows</b> = Move camera view</p>
-<p><b>Right buttons</b> = R/F/U moves</p>
+<p><b>⬅️➡️⬆️⬇️</b> = Camera direction</p>
+<p><b>R/F/U buttons</b> = Cube moves</p>
 </div>
 <button class="pop-btn" style="margin-top:auto" onclick="scramble()">SCRAMBLE</button>
 <button class="pop-btn" style="font-size:0.8rem" onclick="playDemo()">DEMO: R</button>
 <button class="pop-btn" style="font-size:0.8rem" onclick="resetView()">RESET VIEW</button>
 </div>
 <div id="cube-container">
-<!-- LEFT SIDE: CAMERA ARROWS -->
-<div class="camera-controls">
-<div class="camera-row">
-<button class="camera-btn" onclick="cameraLeft()">◀</button>
-<button class="camera-btn" onclick="cameraRight()">▶</button>
-</div>
-<div class="camera-row">
-<button class="camera-btn" onclick="cameraUp()">▲</button>
-<button class="camera-btn" onclick="cameraDown()">▼</button>
-</div>
+<!-- LEFT: CAMERA DIRECTION ARROWS -->
+<div class="camera-arrows">
+<button class="camera-btn" onclick="cameraLeft()">←</button>
+<button class="camera-btn" onclick="cameraRight()">→</button>
+<button class="camera-btn" onclick="cameraUp()">↑</button>
+<button class="camera-btn" onclick="cameraDown()">↓</button>
 </div>
 
-<!-- RIGHT SIDE: MOVE BUTTONS -->
+<!-- RIGHT: CUBE MOVES -->
 <div class="move-controls">
 <button class="move-btn" onclick="doMove('x', false)">R</button>
 <button class="move-btn" onclick="doMove('x', true)">R'</button>
@@ -137,8 +131,8 @@ body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000;
 let scene, camera, renderer;
 let cubies = [], cubeGroup = new THREE.Group();
 let isRotating = false;
-let cameraPhi = Math.PI * 0.4;
-let cameraTheta = Math.PI * 0.3;
+let camAngleX = 0;
+let camAngleY = 0;
 
 function goPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -157,8 +151,7 @@ function setup3D() {
   
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-  
-  updateCameraPosition();
+  camera.position.set(6, 6, 6);
   
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setSize(container.clientWidth, container.clientHeight);
@@ -168,7 +161,6 @@ function setup3D() {
   scene.add(new THREE.DirectionalLight(0xffffff, 0.4));
   scene.add(cubeGroup);
   
-  // Create cubies
   const colors = [0xff0000, 0xffa500, 0xffffff, 0xffff00, 0x00ff00, 0x0000ff];
   for (let x = -1; x <= 1; x++) {
     for (let y = -1; y <= 1; y++) {
@@ -196,18 +188,18 @@ function setup3D() {
   animate();
 }
 
-function updateCameraPosition() {
-  const radius = 8;
-  camera.position.x = radius * Math.sin(cameraPhi) * Math.cos(cameraTheta);
-  camera.position.y = radius * Math.sin(cameraTheta);
-  camera.position.z = radius * Math.cos(cameraPhi) * Math.cos(cameraTheta);
-}
+// **SIMPLE DIRECTION ARROWS**
+function cameraLeft() { camAngleX -= 0.5; updateCamera(); }
+function cameraRight() { camAngleX += 0.5; updateCamera(); }
+function cameraUp() { camAngleY -= 0.5; updateCamera(); }
+function cameraDown() { camAngleY += 0.5; updateCamera(); }
 
-// **SIMPLE ARROW CAMERA CONTROLS**
-function cameraLeft() { cameraPhi += 0.4; updateCameraPosition(); }
-function cameraRight() { cameraPhi -= 0.4; updateCameraPosition(); }
-function cameraUp() { cameraTheta -= 0.4; cameraTheta = Math.max(0.1, cameraTheta); updateCameraPosition(); }
-function cameraDown() { cameraTheta += 0.4; cameraTheta = Math.min(Math.PI - 0.1, cameraTheta); updateCameraPosition(); }
+function updateCamera() {
+  const radius = 8;
+  camera.position.x = radius * Math.cos(camAngleX) * Math.cos(camAngleY);
+  camera.position.y = radius * Math.sin(camAngleY);
+  camera.position.z = radius * Math.sin(camAngleX) * Math.cos(camAngleY);
+}
 
 function doMove(axis, prime) {
   if (isRotating) return;
@@ -216,7 +208,6 @@ function doMove(axis, prime) {
 
 function handleMove(axis, prime) {
   isRotating = true;
-  
   const layer = 1;
   const pivot = new THREE.Group();
   scene.add(pivot);
@@ -255,9 +246,9 @@ function resetView() {
   gsap.to({}, {
     duration: 0.8,
     onUpdate: () => {
-      cameraPhi = Math.PI * 0.4;
-      cameraTheta = Math.PI * 0.3;
-      updateCameraPosition();
+      camAngleX = 0;
+      camAngleY = 0.5;
+      updateCamera();
     }
   });
 }
@@ -268,9 +259,7 @@ function animate() {
   renderer.render(scene, camera);
 }
 
-function playDemo() {
-  doMove('x', false);
-}
+function playDemo() { doMove('x', false); }
 
 function scramble() {
   let moves = 0;
@@ -289,3 +278,4 @@ function scramble() {
 </script>
 </body>
 </html>
+
