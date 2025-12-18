@@ -4,14 +4,11 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Rubik's Pro Terminal</title>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
-
 <style>
 :root { --neon:#00ff00; --bg:#000; }
 * { box-sizing:border-box; }
-
 html,body{
   margin:0;
   padding:0;
@@ -22,7 +19,6 @@ html,body{
   font-family:"Courier New",monospace;
   overflow:hidden;
 }
-
 /* overlay / onboarding */
 #overlay{
   position:fixed;
@@ -64,7 +60,6 @@ html,body{
   padding:6px;
   margin:10px 0;
 }
-
 /* main layout */
 #main-app{
   display:none;
@@ -73,7 +68,6 @@ html,body{
   display:grid;
   grid-template-columns:280px 1fr;
 }
-
 /* sidebar */
 #sidebar{
   background:rgba(0,10,0,0.95);
@@ -89,15 +83,13 @@ html,body{
   font-size:0.85rem;
   margin-bottom:20px;
 }
-
 /* cube + controls */
 #cube-container{
   position:relative;
   width:100%;
   height:100%;
-  padding:20px 40px 90px;
+  padding:20px 40px 90px; /* bottom space for moves */
 }
-
 /* left: camera snap buttons */
 .camera-column{
   position:absolute;
@@ -122,7 +114,6 @@ html,body{
   background:var(--neon);
   color:#000;
 }
-
 /* bottom: move buttons */
 .move-bar{
   position:absolute;
@@ -149,7 +140,6 @@ html,body{
   background:var(--neon);
   color:#000;
 }
-
 /* responsive */
 @media (max-width:900px){
   #main-app{
@@ -169,22 +159,19 @@ html,body{
 }
 </style>
 </head>
-
 <body>
-
+<!-- PAGES -->
 <div id="overlay">
   <div id="p1" class="page active">
     <h1>[ INITIALIZING ]</h1>
     <button class="pop-btn" onclick="goPage('p-warn')">Start learning</button>
   </div>
-
   <div id="p-warn" class="page">
     <h1 style="color:#ff3333">⚠ BEWARE ⚠</h1>
     <div class="warning-red">Patience is required</div>
     <p>Mastering the cube takes hours of practice. Do not expect instant results.</p>
     <button class="pop-btn" onclick="goPage('p-method')">I have patience</button>
   </div>
-
   <div id="p-method" class="page">
     <h1>Select method</h1>
     <p><b>CFOP:</b> Fast, pro-level, hard to memorize.</p>
@@ -194,22 +181,21 @@ html,body{
     <button class="pop-btn" onclick="initApp('Beginner')">Choose Beginner</button>
   </div>
 </div>
-
+<!-- MAIN APP -->
 <div id="main-app">
   <div id="sidebar">
     <h2 id="method-title">SYSTEM</h2>
     <div class="lesson-box">
       <h3>Lesson 1: Notations</h3>
       <p><b>F/R/B/L/U/D</b> = Snap + reorient cube.</p>
-      <p><b>Buttons = screen-relative</b> (R = screen-right always).</p>
+      <p><b>Buttons = screen‑relative</b> (R = screen‑right always).</p>
     </div>
     <button class="pop-btn" onclick="scramble()">Scramble</button>
     <button class="pop-btn" style="font-size:0.8rem" onclick="playDemo()">Demo: R</button>
     <button class="pop-btn" style="font-size:0.8rem" onclick="resetView()">Reset view</button>
   </div>
-
   <div id="cube-container">
-
+    <!-- camera snap (view) -->
     <div class="camera-column">
       <button class="camera-btn" onclick="snapAndReorient('front')">F</button>
       <button class="camera-btn" onclick="snapAndReorient('right')">R</button>
@@ -219,43 +205,198 @@ html,body{
       <button class="camera-btn" onclick="snapAndReorient('down')">D</button>
     </div>
 
-    <!-- ONLY CHANGE: move buttons block -->
-    <div style="
-      position:absolute;
-      left:50%;
-      bottom:20px;
-      transform:translateX(-50%);
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-      justify-content:center;
-      z-index:5;
-    ">
+    <!-- MOVE BUTTONS (put this inside #cube-container, under the camera buttons) -->
+    <div style="position:absolute; left:50%; bottom:20px; transform:translateX(-50%); display:flex; flex-wrap:wrap; gap:8px; justify-content:center;">
+      <!-- Right face -->
       <button class="pop-btn" onclick="screenMove('right')">R</button>
       <button class="pop-btn" onclick="screenMove('right_prime')">R'</button>
-
+      <!-- Left face -->
       <button class="pop-btn" onclick="screenMove('left')">L</button>
       <button class="pop-btn" onclick="screenMove('left_prime')">L'</button>
-
+      <!-- Front face -->
       <button class="pop-btn" onclick="screenMove('front')">F</button>
       <button class="pop-btn" onclick="screenMove('front_prime')">F'</button>
-
+      <!-- Back face -->
       <button class="pop-btn" onclick="screenMove('back')">B</button>
       <button class="pop-btn" onclick="screenMove('back_prime')">B'</button>
-
+      <!-- Up face -->
       <button class="pop-btn" onclick="screenMove('up')">U</button>
       <button class="pop-btn" onclick="screenMove('up_prime')">U'</button>
-
+      <!-- Down face -->
       <button class="pop-btn" onclick="screenMove('down')">D</button>
       <button class="pop-btn" onclick="screenMove('down_prime')">D'</button>
     </div>
 
   </div>
 </div>
-
 <script>
-/* JS UNCHANGED */
+let scene, camera, renderer;
+let cubies = [];
+let cubeGroup = new THREE.Group();
+let isRotating = false;
+let currentTargetFace = 'front';
+const standardViews = {
+  front:{ cameraPos:[0,3,12], cubeRot:[0,0,0] },
+  right:{ cameraPos:[12,3,0], cubeRot:[0,-Math.PI/2,0] },
+  back: { cameraPos:[0,3,-12], cubeRot:[0,Math.PI,0] },
+  left: { cameraPos:[-12,3,0], cubeRot:[0,Math.PI/2,0] },
+  up: { cameraPos:[0,12,3], cubeRot:[-Math.PI/2,0,0] },
+  down: { cameraPos:[0,-12,3], cubeRot:[Math.PI/2,0,0] }
+};
+function getScreenToWorldMapping(view){
+  const m = {
+    front:{ right:'x', left:'x', front:'z', back:'z', up:'y', down:'y' },
+    right:{ right:'z', left:'z', front:'x', back:'x', up:'y', down:'y' },
+    back: { right:'x', left:'x', front:'z', back:'z', up:'y', down:'y' },
+    left: { right:'z', left:'z', front:'x', back:'x', up:'y', down:'y' },
+    up: { right:'z', left:'z', front:'x', back:'x', up:'y', down:'y' },
+    down: { right:'z', left:'z', front:'x', back:'x', up:'y', down:'y' }
+  };
+  return m[view] || m.front;
+}
+/* pages */
+function goPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function initApp(method){
+  document.getElementById('overlay').style.display='none';
+  document.getElementById('main-app').style.display='grid';
+  document.getElementById('method-title').innerText = method + " HUB";
+  setup3D();
+}
+/* 3D setup */
+function setup3D(){
+  const container = document.getElementById('cube-container');
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(
+    35,
+    container.clientWidth/container.clientHeight,
+    0.1,
+    1000
+  );
+  renderer = new THREE.WebGLRenderer({antialias:true,alpha:true});
+  renderer.setSize(container.clientWidth,container.clientHeight);
+  container.appendChild(renderer.domElement);
+  scene.add(new THREE.AmbientLight(0xffffff,0.7));
+  const dl1 = new THREE.DirectionalLight(0xffffff,1);
+  dl1.position.set(1,1,0.5); scene.add(dl1);
+  const dl2 = new THREE.DirectionalLight(0xffffff,0.5);
+  dl2.position.set(-1,-1,-0.5); scene.add(dl2);
+  scene.add(cubeGroup);
+  const colors = [0xff0000,0xffa500,0xffffff,0xffff00,0x00ff00,0x0000ff];
+  for(let x=-1;x<=1;x++){
+    for(let y=-1;y<=1;y++){
+      for(let z=-1;z<=1;z++){
+        if(x===0 && y===0 && z===0) continue;
+        const materials = [
+          new THREE.MeshLambertMaterial({color:colors[0]}),
+          new THREE.MeshLambertMaterial({color:colors[1]}),
+          new THREE.MeshLambertMaterial({color:colors[2]}),
+          new THREE.MeshLambertMaterial({color:colors[3]}),
+          new THREE.MeshLambertMaterial({color:colors[4]}),
+          new THREE.MeshLambertMaterial({color:colors[5]})
+        ];
+        const cubie = new THREE.Mesh(
+          new THREE.BoxGeometry(0.95,0.95,0.95),
+          materials
+        );
+        cubie.position.set(x,y,z);
+        cubies.push(cubie);
+        cubeGroup.add(cubie);
+      }
+    }
+  }
+  snapAndReorient('front');
+  window.addEventListener('resize',()=>{
+    camera.aspect = container.clientWidth/container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth,container.clientHeight);
+  });
+  animate();
+}
+/* snapping view */
+function snapAndReorient(targetFace){
+  const view = standardViews[targetFace];
+  currentTargetFace = targetFace;
+  gsap.to(camera.position,{
+    x:view.cameraPos[0],
+    y:view.cameraPos[1],
+    z:view.cameraPos[2],
+    duration:0.8,
+    ease:"power2.inOut"
+  });
+  const rot = new THREE.Euler(view.cubeRot[0],view.cubeRot[1],view.cubeRot[2]);
+  gsap.to(cubeGroup.rotation,{
+    x:rot.x,
+    y:rot.y,
+    z:rot.z,
+    duration:0.8,
+    ease:"power2.inOut"
+  });
+}
+/* screen‑relative moves */
+function screenMove(dir){
+  if(isRotating) return;
+  const prime = dir.endsWith("_prime");
+  const baseDir = dir.replace("_prime","");
+  const axisMap = getScreenToWorldMapping(currentTargetFace);
+  const axis = axisMap[baseDir];
+  const positive = (baseDir==="right" || baseDir==="front" || baseDir==="up");
+  const layerSign = positive ? 1 : -1;
+  handleMove(axis, layerSign, prime);
+}
+function handleMove(axis,layerSign,prime){
+  isRotating = true;
+  const pivot = new THREE.Group();
+  scene.add(pivot);
+  const moving = [];
+  cubies.forEach(c=>{
+    const pos = c.position;
+    if(Math.round(pos[axis]) === layerSign){
+      pivot.add(c);
+      moving.push(c);
+    }
+  });
+  const angle = (prime ? 1 : -1) * Math.PI/2;
+  gsap.to(pivot.rotation,{
+    [axis]:angle,
+    duration:0.3,
+    ease:"power2.inOut",
+    onComplete:()=>{
+      moving.forEach(c=>{
+        cubeGroup.add(c);
+        c.position.set(
+          Math.round(c.position.x),
+          Math.round(c.position.y),
+          Math.round(c.position.z)
+        );
+      });
+      scene.remove(pivot);
+      isRotating=false;
+    }
+  });
+}
+function resetView(){ snapAndReorient('front'); }
+function animate(){
+  requestAnimationFrame(animate);
+  camera.lookAt(0,0,0);
+  renderer.render(scene,camera);
+}
+/* helper buttons */
+function playDemo(){ screenMove('right'); }
+function scramble(){
+  let count = 0;
+  const moves = ['right','left','front','back','up','down'];
+  const interval = setInterval(()=>{
+    if(isRotating) return;
+    if(count>=20){ clearInterval(interval); return; }
+    const m = moves[Math.floor(Math.random()*moves.length)];
+    const prime = Math.random()>0.5;
+    screenMove(prime ? m+'_prime' : m);
+    count++;
+  },250);
+}
 </script>
-
 </body>
 </html>
