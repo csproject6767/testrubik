@@ -187,7 +187,7 @@ html::before {
   border-radius: 20px;
   border: 1px solid var(--border-glow);
   padding: 24px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,252,0.1);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
 }
 .lesson-box h3 {
   color: var(--accent-soft);
@@ -359,32 +359,32 @@ html::before {
     <div class="notation-row">
       <button class="pop-btn" onclick="playNotationDemo('R')">R</button>
       <p>Right face 90° clockwise.</p>
-      <video id="vid-R" class="notation-video" src="videos/R.mp4" muted loop></video>
+      <video id="vid-R" class="notation-video" muted loop></video>
     </div>
     <div class="notation-row">
       <button class="pop-btn" onclick="playNotationDemo('L')">L</button>
       <p>Left face 90° clockwise.</p>
-      <video id="vid-L" class="notation-video" src="videos/L.mp4" muted loop></video>
+      <video id="vid-L" class="notation-video" muted loop></video>
     </div>
     <div class="notation-row">
       <button class="pop-btn" onclick="playNotationDemo('U')">U</button>
       <p>Upper face 90° clockwise.</p>
-      <video id="vid-U" class="notation-video" src="videos/U.mp4" muted loop></video>
+      <video id="vid-U" class="notation-video" muted loop></video>
     </div>
     <div class="notation-row">
       <button class="pop-btn" onclick="playNotationDemo('D')">D</button>
       <p>Down face 90° clockwise.</p>
-      <video id="vid-D" class="notation-video" src="videos/D.mp4" muted loop></video>
+      <video id="vid-D" class="notation-video" muted loop></video>
     </div>
     <div class="notation-row">
       <button class="pop-btn" onclick="playNotationDemo('F')">F</button>
       <p>Front face 90° clockwise.</p>
-      <video id="vid-F" class="notation-video" src="videos/F.mp4" muted loop></video>
+      <video id="vid-F" class="notation-video" muted loop></video>
     </div>
     <div class="notation-row">
       <button class="pop-btn" onclick="playNotationDemo('B')">B</button>
       <p>Back face 90° clockwise.</p>
-      <video id="vid-B" class="notation-video" src="videos/B.mp4" muted loop></video>
+      <video id="vid-B" class="notation-video" muted loop></video>
     </div>
     <p style="margin-top:15px;">Primes (R', U', etc.) are the same face 90° the other way.</p>
     <p>Double turns (R2) are 180° turns.</p>
@@ -659,12 +659,17 @@ function startLesson(id) {
 }
 
 function playNotationDemo(move) {
-  const id = 'vid-' + move;
-  const vid = document.getElementById(id);
-  if (!vid) return;
-  vid.currentTime = 0;
-  vid.play();
-  setTimeout(() => vid.pause(), 800);
+  const vid = document.getElementById(`vid-${move}`);
+  if (vid) {
+    vid.src = `videos/${move}.mp4`;
+    vid.currentTime = 0;
+    vid.play();
+    setTimeout(() => vid.pause(), 1500);
+  }
+  // Live cube animation on notation page
+  if (!isRotating) {
+    setTimeout(() => screenMove(move), 200);
+  }
 }
 
 function setup3D() {
