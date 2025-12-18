@@ -354,7 +354,6 @@ let scene, camera, renderer;
 let cubies = [];
 let cubeGroup = new THREE.Group();
 let isRotating = false;
-let currentTargetFace = 'front';
 let zoomDistance = 12; // starting distance from cube
 const minZoom = 5;
 const maxZoom = 25;
@@ -527,7 +526,6 @@ function snapAndReorient(targetFace) {
     duration: 0.8,
     ease: "power2.inOut"
   });
-  currentTargetFace = targetFace;
 }
 
 function screenMove(move) {
@@ -538,6 +536,10 @@ function screenMove(move) {
     move = move.replace('_prime', '');
   }
   let axis, layerSign;
+  // FIXED world mapping:
+  // x+: right face (R), x-: left face (L)
+  // y+: up face (U), y-: down face (D)
+  // z+: front face (F), z-: back face (B)
   switch (move) {
     case 'R': axis = 'x'; layerSign = 1; break;
     case 'L': axis = 'x'; layerSign = -1; break;
@@ -558,6 +560,7 @@ function handleMove(axis, layerSign, prime) {
   cubies.forEach(cubie => {
     const worldPos = new THREE.Vector3();
     cubie.getWorldPosition(worldPos);
+    // only cubies on the chosen face layer
     if (Math.round(worldPos[axis]) === layerSign) {
       pivot.attach(cubie);
       movingCubies.push(cubie);
