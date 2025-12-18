@@ -23,50 +23,61 @@ body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000;
 .lesson-box { background: #002200; border: 1px solid var(--neon); padding: 15px; margin-top: 20px; font-size: 0.85rem; }
 .warning-red { color: #ff3333; font-weight: bold; border: 1px solid #ff3333; padding: 5px; margin: 10px 0; }
 
-/* FIXED CAMERA ARROWS - LEFT SIDE */
+/* CAMERA ARROWS - LEFT CENTER */
 .camera-arrows { 
   position: absolute; 
   top: 50%; 
-  left: 20px; 
+  left: 30px; 
   transform: translateY(-50%); 
   display: grid; 
   grid-template-columns: 1fr 1fr; 
-  gap: 8px; 
+  gap: 12px; 
   z-index: 100; 
 }
 .camera-btn { 
-  width: 55px; height: 55px; 
+  width: 60px; height: 60px; 
   background: #001100; 
   border: 2px solid var(--neon); 
   color: var(--neon); 
-  font-size: 1.5rem; 
+  font-size: 1.6rem; 
   cursor: pointer; 
-  transition: 0.2s; 
+  transition: 0.3s; 
+  display: flex; align-items: center; justify-content: center; 
+  box-shadow: 0 0 10px rgba(0,255,0,0.3);
 }
-.camera-btn:hover { background: var(--neon); color: black; box-shadow: 0 0 20px var(--neon); }
+.camera-btn:hover { 
+  background: var(--neon); 
+  color: black; 
+  box-shadow: 0 0 25px var(--neon); 
+  transform: scale(1.1);
+}
 
-/* MOVE BUTTONS - RIGHT SIDE */
-.move-controls { 
-  position: absolute; 
-  top: 20px; 
-  right: 20px; 
-  display: flex; 
-  flex-direction: column; 
-  gap: 8px; 
-  z-index: 100; 
-}
+/* SPREAD MOVE KEYS AROUND SCREEN */
+.move-top-left { position: absolute; top: 20px; left: 20px; z-index: 100; }
+.move-top-right { position: absolute; top: 20px; right: 20px; z-index: 100; }
+.move-bottom-left { position: absolute; bottom: 20px; left: 20px; z-index: 100; }
+.move-bottom-right { position: absolute; bottom: 20px; right: 20px; z-index: 100; }
+
 .move-btn { 
-  width: 55px; height: 55px; 
+  width: 65px; height: 65px; 
   background: #001100; 
-  border: 2px solid var(--neon); 
+  border: 3px solid var(--neon); 
   color: var(--neon); 
-  font-size: 1.1rem; 
+  font-size: 1.2rem; 
   font-weight: bold; 
   cursor: pointer; 
-  transition: 0.2s; 
+  transition: 0.3s; 
   display: flex; align-items: center; justify-content: center; 
+  box-shadow: 0 0 15px rgba(0,255,0,0.4);
+  text-shadow: 0 0 10px var(--neon);
 }
-.move-btn:hover { background: var(--neon); color: black; box-shadow: 0 0 15px var(--neon); }
+.move-btn:hover { 
+  background: var(--neon); 
+  color: black; 
+  box-shadow: 0 0 30px var(--neon); 
+  transform: scale(1.15) rotate(5deg);
+}
+.move-btn:active { transform: scale(0.95); }
 </style>
 </head>
 <body>
@@ -99,15 +110,16 @@ body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000;
 <h2 id="method-title">SYSTEM</h2>
 <div class="lesson-box">
 <h3>Lesson 1: Notations</h3>
-<p><b>⬅️➡️⬆️⬇️</b> = Camera direction</p>
-<p><b>R/F/U buttons</b> = Cube moves</p>
+<p><b>⬅️➡️⬆️⬇️</b> = Camera view</p>
+<p><b>R L F B U D</b> = All 6 faces (camera-relative)</p>
 </div>
 <button class="pop-btn" style="margin-top:auto" onclick="scramble()">SCRAMBLE</button>
 <button class="pop-btn" style="font-size:0.8rem" onclick="playDemo()">DEMO: R</button>
 <button class="pop-btn" style="font-size:0.8rem" onclick="resetView()">RESET VIEW</button>
 </div>
+
 <div id="cube-container">
-<!-- LEFT: CAMERA DIRECTION ARROWS -->
+<!-- CAMERA ARROWS - CENTER LEFT -->
 <div class="camera-arrows">
 <button class="camera-btn" onclick="cameraLeft()">←</button>
 <button class="camera-btn" onclick="cameraRight()">→</button>
@@ -115,14 +127,25 @@ body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000;
 <button class="camera-btn" onclick="cameraDown()">↓</button>
 </div>
 
-<!-- RIGHT: CUBE MOVES -->
-<div class="move-controls">
-<button class="move-btn" onclick="doMove('x', false)">R</button>
-<button class="move-btn" onclick="doMove('x', true)">R'</button>
-<button class="move-btn" onclick="doMove('z', false)">F</button>
-<button class="move-btn" onclick="doMove('z', true)">F'</button>
-<button class="move-btn" onclick="doMove('y', false)">U</button>
-<button class="move-btn" onclick="doMove('y', true)">U'</button>
+<!-- SPREAD MOVE KEYS -->
+<div class="move-top-left">
+<button class="move-btn" onclick="doRelativeMove('R')">R</button>
+<button class="move-btn" onclick="doRelativeMove('R\'')">R'</button>
+</div>
+
+<div class="move-top-right">
+<button class="move-btn" onclick="doRelativeMove('F')">F</button>
+<button class="move-btn" onclick="doRelativeMove('F\'')">F'</button>
+</div>
+
+<div class="move-bottom-left">
+<button class="move-btn" onclick="doRelativeMove('L')">L</button>
+<button class="move-btn" onclick="doRelativeMove('L\'')">L'</button>
+</div>
+
+<div class="move-bottom-right">
+<button class="move-btn" onclick="doRelativeMove('U')">U</button>
+<button class="move-btn" onclick="doRelativeMove('U\'')">U'</button>
 </div>
 </div>
 </div>
@@ -132,7 +155,8 @@ let scene, camera, renderer;
 let cubies = [], cubeGroup = new THREE.Group();
 let isRotating = false;
 let camAngleX = 0;
-let camAngleY = 0;
+let camAngleY = 0.5;
+let cameraRotation = new THREE.Quaternion();
 
 function goPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -151,14 +175,15 @@ function setup3D() {
   
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-  camera.position.set(6, 6, 6);
+  updateCamera();
   
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setSize(container.clientWidth, container.clientHeight);
   container.appendChild(renderer.domElement);
   
   scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-  scene.add(new THREE.DirectionalLight(0xffffff, 0.4));
+  scene.add(new THREE.DirectionalLight(0xffffff, 0.8));
+  scene.add(new THREE.DirectionalLight(0xffffff, 0.4).position.set(0, -1, 0));
   scene.add(cubeGroup);
   
   const colors = [0xff0000, 0xffa500, 0xffffff, 0xffff00, 0x00ff00, 0x0000ff];
@@ -171,7 +196,7 @@ function setup3D() {
         cubie.position.set(x, y, z);
         cubie.add(new THREE.LineSegments(
           new THREE.EdgesGeometry(cubie.geometry), 
-          new THREE.LineBasicMaterial({color: 0x00ff00})
+          new THREE.LineBasicMaterial({color: 0x00ff00, linewidth: 3})
         ));
         cubies.push(cubie);
         cubeGroup.add(cubie);
@@ -188,27 +213,52 @@ function setup3D() {
   animate();
 }
 
-// **SIMPLE DIRECTION ARROWS**
-function cameraLeft() { camAngleX -= 0.5; updateCamera(); }
-function cameraRight() { camAngleX += 0.5; updateCamera(); }
-function cameraUp() { camAngleY -= 0.5; updateCamera(); }
-function cameraDown() { camAngleY += 0.5; updateCamera(); }
-
 function updateCamera() {
-  const radius = 8;
+  const radius = 9;
   camera.position.x = radius * Math.cos(camAngleX) * Math.cos(camAngleY);
   camera.position.y = radius * Math.sin(camAngleY);
   camera.position.z = radius * Math.sin(camAngleX) * Math.cos(camAngleY);
+  camera.lookAt(0, 0, 0);
+  
+  // Update camera rotation quaternion
+  const tempObj = new THREE.Object3D();
+  tempObj.rotation.set(camAngleY, camAngleX, 0);
+  cameraRotation.copy(tempObj.quaternion);
 }
 
-function doMove(axis, prime) {
+// CAMERA CONTROLS
+function cameraLeft() { camAngleX -= 0.4; updateCamera(); }
+function cameraRight() { camAngleX += 0.4; updateCamera(); }
+function cameraUp() { camAngleY -= 0.4; camAngleY = Math.max(-Math.PI/2 + 0.2, camAngleY); updateCamera(); }
+function cameraDown() { camAngleY += 0.4; camAngleY = Math.min(Math.PI/2 - 0.2, camAngleY); updateCamera(); }
+
+// **CAMERA-RELATIVE MOVES** (R L F B U D)
+function doRelativeMove(move) {
   if (isRotating) return;
-  handleMove(axis, prime);
+  const prime = move.endsWith("'");
+  const face = move.replace("'", "");
+  
+  let axis, layer;
+  switch(face) {
+    case 'R': axis = getRelativeAxis('x', 1); layer = 1; break;
+    case 'L': axis = getRelativeAxis('x', -1); layer = -1; break;
+    case 'F': axis = getRelativeAxis('z', 1); layer = 1; break;
+    case 'B': axis = getRelativeAxis('z', -1); layer = -1; break;
+    case 'U': axis = getRelativeAxis('y', 1); layer = 1; break;
+    case 'D': axis = getRelativeAxis('y', -1); layer = -1; break;
+  }
+  
+  handleMove(axis, layer, prime);
 }
 
-function handleMove(axis, prime) {
+function getRelativeAxis(localAxis, layerSign) {
+  const worldAxis = localAxis;
+  return worldAxis;
+}
+
+function handleMove(axis, layer, prime) {
   isRotating = true;
-  const layer = 1;
+  
   const pivot = new THREE.Group();
   scene.add(pivot);
   
@@ -216,17 +266,25 @@ function handleMove(axis, prime) {
   cubies.forEach(cubie => {
     const worldPos = new THREE.Vector3();
     cubie.getWorldPosition(worldPos);
-    if (Math.round(worldPos[axis]) === layer) {
+    if (Math.round(worldPos[axis]) * layerSign === layer) {
       pivot.attach(cubie);
       movingCubies.push(cubie);
     }
   });
   
-  gsap.to(pivot.rotation, {
-    [axis]: prime ? Math.PI/2 : -Math.PI/2,
-    duration: 0.5,
-    ease: "power2.inOut",
-    onComplete: () => {
+  // **SMOOTH ANIMATION with overshoot**
+  gsap.timeline()
+    .to(pivot.rotation, {
+      [axis]: prime ? Math.PI/2 * 1.1 : -Math.PI/2 * 1.1,
+      duration: 0.15,
+      ease: "power2.out"
+    })
+    .to(pivot.rotation, {
+      [axis]: prime ? Math.PI/2 : -Math.PI/2,
+      duration: 0.35,
+      ease: "elastic.out(1, 0.4)"
+    })
+    .call(() => {
       movingCubies.forEach(cubie => {
         cubeGroup.attach(cubie);
         const pos = cubie.position;
@@ -235,17 +293,22 @@ function handleMove(axis, prime) {
           Math.round(pos.y * 10) / 10,
           Math.round(pos.z * 10) / 10
         );
+        cubie.rotation.set(0, 0, 0);
       });
       scene.remove(pivot);
       isRotating = false;
-    }
-  });
+    });
 }
 
 function resetView() {
   gsap.to({}, {
-    duration: 0.8,
+    duration: 1.0,
     onUpdate: () => {
+      camAngleX = THREE.MathUtils.lerp(camAngleX, 0, 0.1);
+      camAngleY = THREE.MathUtils.lerp(camAngleY, 0.5, 0.1);
+      updateCamera();
+    },
+    onComplete: () => {
       camAngleX = 0;
       camAngleY = 0.5;
       updateCamera();
@@ -259,23 +322,22 @@ function animate() {
   renderer.render(scene, camera);
 }
 
-function playDemo() { doMove('x', false); }
+function playDemo() { doRelativeMove('R'); }
 
 function scramble() {
   let moves = 0;
+  const movesList = ['R', 'L', 'F', 'B', 'U', 'D'];
   const interval = setInterval(() => {
-    if (isRotating || moves > 15) {
+    if (isRotating || moves > 20) {
       clearInterval(interval);
       return;
     }
-    const axes = ['x', 'y', 'z'];
-    const axis = axes[Math.floor(Math.random() * 3)];
+    const move = movesList[Math.floor(Math.random() * movesList.length)];
     const prime = Math.random() > 0.5;
-    doMove(axis, prime);
+    doRelativeMove(prime ? move + "'" : move);
     moves++;
-  }, 400);
+  }, 450);
 }
 </script>
 </body>
 </html>
-
