@@ -168,12 +168,19 @@ const standardViews = {
   down:  { cameraPos: [0, -12, 3], cubeRot: [Math.PI/2, 0, 0] }
 };
 
-// **SCREEN-RELATIVE AXIS MAPPING** (R = screen-right face ALWAYS)
-const screenToWorldAxis = {
-  right: 'x', left: 'x', 
-  front: 'z', back: 'z',
-  up: 'y', down: 'y'
-};
+// **DYNAMIC AXIS MAPPING** based on current view
+function getScreenToWorldMapping(targetFace) {
+  // Maps screen directions to WORLD axes AFTER cube reorientation
+  const mappings = {
+    front: { right: 'x', left: 'x', front: 'z', back: 'z', up: 'y', down: 'y' },
+    right: { right: 'z', left: 'z', front: 'x', back: 'x', up: 'y', down: 'y' },
+    back:  { right: 'x', left: 'x', front: 'z', back: 'z', up: 'y', down: 'y' },
+    left:  { right: 'z', left: 'z', front: 'x', back: 'x', up: 'y', down: 'y' },
+    up:    { right: 'z', left: 'z', front: 'x', back: 'x', up: 'y', down: 'y' },
+    down:  { right: 'z', left: 'z', front: 'x', back: 'x', up: 'y', down: 'y' }
+  };
+  return mappings[targetFace] || mappings.front;
+}
 
 function goPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -272,8 +279,10 @@ function screenMove(direction) {
   if (isRotating) return;
   
   const prime = direction.endsWith('_prime');
-  const axis = screenToWorldAxis[direction.replace('_prime', '')];
-  const layerSign = direction.includes('right') || direction.includes('front') || direction.includes('up') ? 1 : -1;
+  const baseDir = direction.replace('_prime', '');
+  const axisMap = getScreenToWorldMapping(currentTargetFace);
+  const axis = axisMap[baseDir];
+  const layerSign = baseDir === 'right' || baseDir === 'front' || baseDir === 'up' ? 1 : -1;
   
   handleMove(axis, layerSign, prime);
 }
@@ -335,7 +344,7 @@ function playDemo() { screenMove('right'); }
 
 function scramble() {
   let moves = 0;
-  const movesList = ['right', 'left', 'front', 'back', 'up', 'down'];
+  const movesList = ['right', 'left', 'front', 'back'];
   const interval = setInterval(() => {
     if (isRotating || moves > 20) {
       clearInterval(interval);
