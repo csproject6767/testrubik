@@ -316,7 +316,7 @@ html,body{
     <div class="lesson-box">
       <h3>Lesson 1: Notations</h3>
       <p><b>F/R/B/L/U/D</b> = Snap + reorient cube.</p>
-      <p><b>Buttons = fixed cube faces</b> (R always turns the right face, etc.).</p>
+      <p><b>Buttons = fixed physical faces</b> (R always turns the right face, etc.).</p>
     </div>
     <button class="pop-btn" onclick="scramble()">Scramble</button>
     <button class="pop-btn" style="font-size:0.8rem" onclick="playDemo()">Demo: R</button>
@@ -536,10 +536,8 @@ function screenMove(move) {
     move = move.replace('_prime', '');
   }
   let axis, layerSign;
-  // FIXED world mapping:
-  // x+: right face (R), x-: left face (L)
-  // y+: up face (U), y-: down face (D)
-  // z+: front face (F), z-: back face (B)
+  // Fixed world mapping:
+  // x+: right, x-: left; y+: up, y-: down; z+: front, z-: back
   switch (move) {
     case 'R': axis = 'x'; layerSign = 1; break;
     case 'L': axis = 'x'; layerSign = -1; break;
@@ -560,7 +558,7 @@ function handleMove(axis, layerSign, prime) {
   cubies.forEach(cubie => {
     const worldPos = new THREE.Vector3();
     cubie.getWorldPosition(worldPos);
-    // only cubies on the chosen face layer
+    // Only cubies on the chosen face layer
     if (Math.round(worldPos[axis]) === layerSign) {
       pivot.attach(cubie);
       movingCubies.push(cubie);
