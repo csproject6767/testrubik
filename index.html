@@ -316,7 +316,7 @@ html,body{
     <div class="lesson-box">
       <h3>Lesson 1: Notations</h3>
       <p><b>F/R/B/L/U/D</b> = Snap + reorient cube.</p>
-      <p><b>Buttons = screen‑relative</b> (R = screen‑right always).</p>
+      <p><b>Buttons = fixed cube faces</b> (R always turns the right face, etc.).</p>
     </div>
     <button class="pop-btn" onclick="scramble()">Scramble</button>
     <button class="pop-btn" style="font-size:0.8rem" onclick="playDemo()">Demo: R</button>
@@ -367,19 +367,6 @@ const standardViews = {
   up: { cameraPos:[0,12,3], cubeRot:[-Math.PI/2,0,0] },
   down: { cameraPos:[0,-12,3], cubeRot:[Math.PI/2,0,0] }
 };
-
-// Map screen directions to world axes depending on the current snapped view
-function getScreenToWorldMapping(view) {
-  const maps = {
-    front: { right: 'x', left: 'x', up: 'y', down: 'y', front: 'z', back: 'z' },
-    right: { right: 'z', left: 'z', up: 'y', down: 'y', front: 'x', back: 'x' },
-    back: { right: 'x', left: 'x', up: 'y', down: 'y', front: 'z', back: 'z' },
-    left: { right: 'z', left: 'z', up: 'y', down: 'y', front: 'x', back: 'x' },
-    up: { right: 'z', left: 'z', up: 'y', down: 'y', front: 'x', back: 'x' },
-    down: { right: 'z', left: 'z', up: 'y', down: 'y', front: 'x', back: 'x' }
-  };
-  return maps[view] || maps.front;
-}
 
 /* pages */
 function goPage(id){
@@ -550,21 +537,16 @@ function screenMove(move) {
     prime = true;
     move = move.replace('_prime', '');
   }
-  // convert R/L/U/D/F/B to screen directions
-  let baseDir;
+  let axis, layerSign;
   switch (move) {
-    case 'R': baseDir = 'right'; break;
-    case 'L': baseDir = 'left'; break;
-    case 'U': baseDir = 'up'; break;
-    case 'D': baseDir = 'down'; break;
-    case 'F': baseDir = 'front'; break;
-    case 'B': baseDir = 'back'; break;
+    case 'R': axis = 'x'; layerSign = 1; break;
+    case 'L': axis = 'x'; layerSign = -1; break;
+    case 'U': axis = 'y'; layerSign = 1; break;
+    case 'D': axis = 'y'; layerSign = -1; break;
+    case 'F': axis = 'z'; layerSign = 1; break;
+    case 'B': axis = 'z'; layerSign = -1; break;
     default: return;
   }
-  const axisMap = getScreenToWorldMapping(currentTargetFace);
-  const axis = axisMap[baseDir];
-  const positive = (baseDir === 'right' || baseDir === 'front' || baseDir === 'up');
-  const layerSign = positive ? 1 : -1;
   handleMove(axis, layerSign, prime);
 }
 
