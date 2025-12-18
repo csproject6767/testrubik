@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Rubik's Pro Terminal</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+<style>
+:root { --neon: #00ff00; --bg: #000; }
+body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; color: var(--neon); font-family: 'Courier New', monospace; overflow: hidden; }
+
+#overlay { position: fixed; inset: 0; z-index: 9999; background: #000; display: flex; justify-content: center; align-items: center; }
+.page { display: none; text-align: center; border: 2px solid var(--neon); padding: 40px; background: #001100; max-width: 500px; box-shadow: 0 0 30px rgba(0,255,0,0.3); }
+.active { display: block; }
+.pop-btn { background: black; border: 2px solid var(--neon); color: var(--neon); padding: 12px 25px; font-size: 1rem; cursor: pointer; margin: 10px; font-weight: bold; text-transform: uppercase; transition: 0.2s; }
+.pop-btn:hover { background: var(--neon); color: black; box-shadow: 0 0 15px var(--neon); }
+
+#main-app { display: none; width: 100vw; height: 100vh; display: grid; grid-template-columns: 320px 1fr; }
+#sidebar { background: rgba(0, 10, 0, 0.95); border-right: 1px solid var(--neon); padding: 25px; display: flex; flex-direction: column; box-sizing: border-box; }
+#cube-container { position: relative; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+#cube-container:active { cursor: grabbing; }
+
+.lesson-box { background: #002200; border: 1px solid var(--neon); padding: 15px; margin-top: 20px; font-size: 0.85rem; }
+.warning-red { color: #ff3333; font-weight: bold; border: 1px solid #ff3333; padding: 5px; margin: 10px 0; }
+
+.axis-controls { position: absolute; top: 20px; left: 20px; display: flex; flex-direction: column; gap: 8px; z-index: 100; }
+.axis-btn { width: 55px; height: 55px; background: #001100; border: 2px solid var(--neon); color: var(--neon); font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
+.axis-btn:hover:not(.disabled) { background: var(--neon); color: black; box-shadow: 0 0 15px var(--neon); }
+.axis-btn.disabled { opacity: 0.4; cursor: not-allowed; border-color: #666; }
+</style>
+</head>
+<body>
+
+<div id="overlay">
+<div id="p1" class="page active">
+<h1>[ INITIALIZING ]</h1>
+<button class="pop-btn" onclick="goPage('p-warn')">START LEARNING</button>
+</div>
+
+<div id="p-warn" class="page">
+<h1 style="color:#ff3333">⚠ BEWARE ⚠</h1>
+<div class="warning-red">PATIENCE IS REQUIRED</div>
+<p>Mastering the cube takes hours of practice. Do not expect instant results.</p>
+<button class="pop-btn" onclick="goPage('p-method')">I HAVE PATIENCE</button>
+</div>
+
+<div id="p-method" class="page">
+<h1>SELECT METHOD</h1>
+<p><b>CFOP:</b> Fast, pro-level, but very hard to memorize.</p>
+<button class="pop-btn" onclick="initApp('CFOP')">CHOOSE CFOP</button>
+<hr style="border-color:var(--neon)">
+<p><b>BEGINNER:</b> Simple, layer-by-layer memory.</p>
+<button class="pop-btn" onclick="initApp('Beginner')">CHOOSE BEGINNER</button>
+</div>
+</div>
+
+<div id="main-app">
+<div id="sidebar">
+<h2 id="method-title">SYSTEM</h2>
+<div class="lesson-box">
+<h3>Lesson 1: Notations</h3>
+<p><b>R/R' F/F' U/U'</b> = Twist layers</p>
+<p><b>Drag screen</b> = Move CAMERA around cube</p>
+</div>
+<button class="pop-btn" style="margin-top:auto" onclick="scramble()">SCRAMBLE</button>
+<button class="pop-btn" style="font-size:0.8rem" onclick="playDemo()">DEMO: R</button>
+<button class="pop-btn" style="font-size:0.8rem" onclick="resetView()">RESET VIEW</button>
+</div>
+<div id="cube-container">
+<div class="axis-controls">
+<button class="axis-btn" onclick="doMove('x', false)">R</button>
+<button class="axis-btn" onclick="doMove('x', true)">R'</button>
+<button class="axis-btn" onclick="doMove('z', false)">F</button>
+<button class="axis-btn" onclick="doMove('z', true)">F'</button>
+<button class="axis-btn" onclick="doMove('y', false)">U</button>
+<button class="axis-btn" onclick="doMove('y', true)">U'</button>
+</div>
+</div>
+</div>
+
+<script>
+let scene, camera, renderer;
+let cubies = [], cubeGroup = new THREE.Group();
+let isRotating = false;
+let isDragging = false;
+let dragStart = new THREE.Vector2();
+let spherical = new THREE.Spherical();
+let viewMoves = 0;
+const MAX_MOVES = 3;
+
+function goPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function initApp(method) {
+  document.getElementById('overlay').style.display = 'none';
+  document.getElementById('main-app').style.display = 'grid';
+  document.getElementById('method-title').innerText = method + " HUB";
+  setup3D();
+}
+
+function setup3D() {
+  const container = document.getElementById('cube-container');
+  
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+  
+  // Initial camera position using spherical coordinates
+  spherical.set(8, Math.PI * 0.3, Math.PI * 0.4);
+  camera.position.setFromSpherical(spherical);
+  
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  container.appendChild(renderer.domElement);
+  
+  scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+  scene.add(new THREE.DirectionalLight(0xffffff, 0.4));
+  scene.add(cubeGroup);
+  
+  // Create cubies
+  const colors = [0xff0000, 0xffa500, 0xffffff, 0xffff00, 0x00ff00, 0x0000ff];
+  for (let x = -1; x <= 1; x++) {
+    for (let y = -1; y <= 1; y++) {
+      for (let z = -1; z <= 1; z++) {
+        if (x === 0 && y === 0 && z === 0) continue;
+        const materials = colors.map(c => new THREE.MeshLambertMaterial({ color: c }));
+        const cubie = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.95, 0.95), materials);
+        cubie.position.set(x, y, z);
+        cubie.add(new THREE.LineSegments(
+          new THREE.EdgesGeometry(cubie.geometry), 
+          new THREE.LineBasicMaterial({color: 0x00ff00})
+        ));
+        cubies.push(cubie);
+        cubeGroup.add(cubie);
+      }
+    }
+  }
+  
+  setupCameraControls(container);
+  animate();
+}
+
+function setupCameraControls(container) {
+  // Mouse drag for CAMERA orbit (cube stays still)
+  container.addEventListener('pointerdown', (e) => {
+    if (viewMoves >= MAX_MOVES) return;
+    isDragging = true;
+    dragStart.set(e.clientX, e.clientY);
+  });
+  
+  container.addEventListener('pointermove', (e) => {
+    if (!isDragging || viewMoves >= MAX_MOVES) return;
+    
+    const deltaX = (e.clientX - dragStart.x) * 0.01;
+    const deltaY = (e.clientY - dragStart.y) * 0.01;
+    
+    // Update spherical coordinates for camera orbit
+    spherical.phi -= deltaX;
+    spherical.theta -= deltaY;
+    spherical.theta = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.theta));
+    
+    camera.position.setFromSpherical(spherical);
+    
+    dragStart.set(e.clientX, e.clientY);
+    
+    if (Math.abs(deltaX) > 0.05 || Math.abs(deltaY) > 0.05) {
+      viewMoves = Math.min(MAX_MOVES, viewMoves + 1);
+      updateButtons();
+    }
+  });
+  
+  container.addEventListener('pointerup', () => {
+    isDragging = false;
+  });
+  
+  window.addEventListener('resize', () => {
+    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth, container.clientHeight);
+  });
+}
+
+function doMove(axis, prime) {
+  if (isRotating) return;
+  handleMove(axis, prime);
+}
+
+function handleMove(axis, prime) {
+  isRotating = true;
+  
+  const layer = 1;
+  const pivot = new THREE.Group();
+  scene.add(pivot);
+  
+  const movingCubies = [];
+  cubies.forEach(cubie => {
+    const worldPos = new THREE.Vector3();
+    cubie.getWorldPosition(worldPos);
+    if (Math.round(worldPos[axis]) === layer) {
+      pivot.attach(cubie);
+      movingCubies.push(cubie);
+    }
+  });
+  
+  gsap.to(pivot.rotation, {
+    [axis]: prime ? Math.PI/2 : -Math.PI/2,
+    duration: 0.5,
+    ease: "power2.inOut",
+    onComplete: () => {
+      movingCubies.forEach(cubie => {
+        cubeGroup.attach(cubie);
+        const pos = cubie.position;
+        cubie.position.set(
+          Math.round(pos.x * 10) / 10,
+          Math.round(pos.y * 10) / 10,
+          Math.round(pos.z * 10) / 10
+        );
+      });
+      scene.remove(pivot);
+      isRotating = false;
+    }
+  });
+}
+
+function updateButtons() {
+  const buttons = document.querySelectorAll('.axis-btn');
+  buttons.forEach(btn => {
+    if (viewMoves >= MAX_MOVES) {
+      btn.classList.add('disabled');
+    } else {
+      btn.classList.remove('disabled');
+    }
+  });
+}
+
+function resetView() {
+  gsap.to(spherical, {
+    phi: Math.PI * 0.4,
+    theta: Math.PI * 0.3,
+    duration: 0.8,
+    ease: "power2.inOut",
+    onUpdate: () => {
+      camera.position.setFromSpherical(spherical);
+    },
+    onComplete: () => {
+      viewMoves = 0;
+      updateButtons();
+    }
+  });
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  camera.lookAt(0, 0, 0);
+  renderer.render(scene, camera);
+}
+
+function playDemo() {
+  doMove('x', false);
+}
+
+function scramble() {
+  let moves = 0;
+  const interval = setInterval(() => {
+    if (isRotating || moves > 15) {
+      clearInterval(interval);
+      return;
+    }
+    const axes = ['x', 'y', 'z'];
+    const axis = axes[Math.floor(Math.random() * 3)];
+    const prime = Math.random() > 0.5;
+    doMove(axis, prime);
+    moves++;
+  }, 400);
+}
+</script>
+</body>
+</html>
