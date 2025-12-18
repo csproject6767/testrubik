@@ -204,7 +204,6 @@ html,body{
       <button class="camera-btn" onclick="snapAndReorient('up')">U</button>
       <button class="camera-btn" onclick="snapAndReorient('down')">D</button>
     </div>
-
     <!-- MOVE BUTTONS -->
     <div style="position:absolute; left:50%; bottom:70px; transform:translateX(-50%); display:flex; flex-wrap:wrap; gap:8px; justify-content:center;">
       <!-- Right face -->
@@ -226,7 +225,6 @@ html,body{
       <button class="pop-btn" onclick="screenMove('down')">D</button>
       <button class="pop-btn" onclick="screenMove('down_prime')">D'</button>
     </div>
-
   </div>
 </div>
 <script>
@@ -346,7 +344,7 @@ function screenMove(dir){
   const layerSign = positive ? 1 : -1;
   handleMove(axis, layerSign, prime);
 }
-function handleMove(axis,layerSign,prime){
+function handleMove(axis, layerSign, prime){
   isRotating = true;
   const pivot = new THREE.Group();
   scene.add(pivot);
