@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Rubik's Pro Terminal</title>
 
-<!-- libs -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
 
@@ -91,12 +90,12 @@ html,body{
   margin-bottom:20px;
 }
 
-/* cube area */
+/* cube + controls */
 #cube-container{
   position:relative;
   width:100%;
   height:100%;
-  padding:20px 80px; /* keep cube away from buttons */
+  padding:20px 40px 90px; /* bottom space for moves */
 }
 
 /* left: camera snap buttons */
@@ -124,30 +123,26 @@ html,body{
   color:#000;
 }
 
-/* right: move buttons */
-.move-column{
+/* bottom: move buttons */
+.move-bar{
   position:absolute;
-  top:50%;
-  right:20px;
-  transform:translateY(-50%);
+  left:50%;
+  bottom:20px;
+  transform:translateX(-50%);
   display:flex;
-  flex-direction:column;
-  gap:20px;
+  flex-wrap:wrap;
+  gap:8px;
+  justify-content:center;
   z-index:5;
 }
-.move-pair{
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-}
 .move-btn{
-  width:60px;
-  height:60px;
-  border:3px solid var(--neon);
+  min-width:50px;
+  height:40px;
+  border:2px solid var(--neon);
   background:#001100;
   color:var(--neon);
   font-weight:bold;
-  font-size:1.1rem;
+  font-size:0.9rem;
   cursor:pointer;
 }
 .move-btn:hover{
@@ -155,22 +150,21 @@ html,body{
   color:#000;
 }
 
-/* responsive (basic) */
+/* responsive */
 @media (max-width:900px){
   #main-app{
     grid-template-columns:1fr;
-    grid-template-rows:260px 1fr;
+    grid-template-rows:250px 1fr;
   }
   #cube-container{
-    padding:10px;
+    padding:10px 10px 90px;
   }
-  .camera-column,
-  .move-column{
-    position:static;
-    transform:none;
+  .camera-column{
+    position:absolute;
+    top:10px;
+    left:50%;
+    transform:translateX(-50%);
     flex-direction:row;
-    justify-content:center;
-    margin-top:5px;
   }
 }
 </style>
@@ -227,31 +221,24 @@ html,body{
     </div>
 
     <!-- move buttons (screen‑relative) -->
-    <div class="move-column">
-      <div class="move-pair">
-        <button class="move-btn" onclick="screenMove('right')">R</button>
-        <button class="move-btn" onclick="screenMove('right_prime')">R'</button>
-      </div>
-      <div class="move-pair">
-        <button class="move-btn" onclick="screenMove('left')">L</button>
-        <button class="move-btn" onclick="screenMove('left_prime')">L'</button>
-      </div>
-      <div class="move-pair">
-        <button class="move-btn" onclick="screenMove('front')">F</button>
-        <button class="move-btn" onclick="screenMove('front_prime')">F'</button>
-      </div>
-      <div class="move-pair">
-        <button class="move-btn" onclick="screenMove('back')">B</button>
-        <button class="move-btn" onclick="screenMove('back_prime')">B'</button>
-      </div>
-      <div class="move-pair">
-        <button class="move-btn" onclick="screenMove('up')">U</button>
-        <button class="move-btn" onclick="screenMove('up_prime')">U'</button>
-      </div>
-      <div class="move-pair">
-        <button class="move-btn" onclick="screenMove('down')">D</button>
-        <button class="move-btn" onclick="screenMove('down_prime')">D'</button>
-      </div>
+    <div class="move-bar">
+      <button class="move-btn" onclick="screenMove('right')">R</button>
+      <button class="move-btn" onclick="screenMove('right_prime')">R'</button>
+
+      <button class="move-btn" onclick="screenMove('left')">L</button>
+      <button class="move-btn" onclick="screenMove('left_prime')">L'</button>
+
+      <button class="move-btn" onclick="screenMove('front')">F</button>
+      <button class="move-btn" onclick="screenMove('front_prime')">F'</button>
+
+      <button class="move-btn" onclick="screenMove('back')">B</button>
+      <button class="move-btn" onclick="screenMove('back_prime')">B'</button>
+
+      <button class="move-btn" onclick="screenMove('up')">U</button>
+      <button class="move-btn" onclick="screenMove('up_prime')">U'</button>
+
+      <button class="move-btn" onclick="screenMove('down')">D</button>
+      <button class="move-btn" onclick="screenMove('down_prime')">D'</button>
     </div>
   </div>
 </div>
@@ -261,20 +248,17 @@ let scene, camera, renderer;
 let cubies = [];
 let cubeGroup = new THREE.Group();
 let isRotating = false;
-
-// current snapped view (used for mapping)
 let currentTargetFace = 'front';
 
 const standardViews = {
-  front: { cameraPos:[0,3,12],   cubeRot:[0,0,0] },
-  right: { cameraPos:[12,3,0],   cubeRot:[0,-Math.PI/2,0] },
-  back:  { cameraPos:[0,3,-12],  cubeRot:[0,Math.PI,0] },
-  left:  { cameraPos:[-12,3,0],  cubeRot:[0,Math.PI/2,0] },
-  up:    { cameraPos:[0,12,3],   cubeRot:[-Math.PI/2,0,0] },
-  down:  { cameraPos:[0,-12,3],  cubeRot:[Math.PI/2,0,0] }
+  front:{ cameraPos:[0,3,12],  cubeRot:[0,0,0] },
+  right:{ cameraPos:[12,3,0],  cubeRot:[0,-Math.PI/2,0] },
+  back: { cameraPos:[0,3,-12], cubeRot:[0,Math.PI,0] },
+  left: { cameraPos:[-12,3,0], cubeRot:[0,Math.PI/2,0] },
+  up:   { cameraPos:[0,12,3],  cubeRot:[-Math.PI/2,0,0] },
+  down: { cameraPos:[0,-12,3], cubeRot:[Math.PI/2,0,0] }
 };
 
-// screen direction -> world axis per view
 function getScreenToWorldMapping(view){
   const m = {
     front:{ right:'x', left:'x', front:'z', back:'z', up:'y', down:'y' },
@@ -389,7 +373,6 @@ function screenMove(dir){
   const axisMap = getScreenToWorldMapping(currentTargetFace);
   const axis    = axisMap[baseDir];
 
-  // layer sign: which side of that axis
   const positive = (baseDir==="right" || baseDir==="front" || baseDir==="up");
   const layerSign = positive ? 1 : -1;
 
@@ -404,8 +387,8 @@ function handleMove(axis,layerSign,prime){
 
   const moving = [];
   cubies.forEach(c=>{
-    const wp = c.position.clone(); // local = world here (grouped)
-    if(Math.round(wp[axis]) === layerSign){
+    const pos = c.position;
+    if(Math.round(pos[axis]) === layerSign){
       pivot.add(c);
       moving.push(c);
     }
