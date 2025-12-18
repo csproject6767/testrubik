@@ -157,14 +157,155 @@ html,body{
     flex-direction:row;
   }
 }
+.milestone{ display:flex; align-items:flex-start; gap:12px; margin:15px 0; }
+.circle-dot{ width:16px; height:16px; border-radius:50%; border:2px solid var(--neon); margin-top:6px; }
 </style>
 </head>
 <body>
 <!-- PAGES -->
 <div id="overlay">
   <div id="p1" class="page active">
-    <h1>[ INITIALIZING ]</h1>
-    <button class="pop-btn" onclick="goPage('p-warn')">Start learning</button>
+    <h1>Welcome to CubeZilla</h1>
+    <p>Master the cube with interactive drills and step‑by‑step systems.</p>
+    <p>Choose how you want to learn: play with the cube or follow a guided roadmap.</p>
+    <button class="pop-btn" onclick="goPage('p-mode')">Continue</button>
+  </div>
+  <div id="p-mode" class="page">
+    <h1>Choose Your Arena</h1>
+    <p>Pick how you want to train today.</p>
+    <button class="pop-btn" onclick="goPage('p-learn-or-play')"> Learn the Cube </button>
+    <button class="pop-btn" onclick="initInteractiveCube()"> Interactive Cube Only </button>
+  </div>
+  <div id="p-learn-or-play" class="page">
+    <h1>How Do You Want to Learn?</h1>
+    <button class="pop-btn" onclick="goPage('p-coach')"> Guided Coach Mode </button>
+    <button class="pop-btn" onclick="goPage('p-formulas')"> Formula Roadmap </button>
+  </div>
+  <div id="p-coach" class="page">
+    <h1>Guided Coach Mode</h1>
+    <p>Follow a human‑style walkthrough with tips, checks and slow motion demos.</p>
+    <button class="pop-btn" onclick="startBeginnerCourse()"> Beginner Path (Layer by Layer) </button>
+    <button class="pop-btn" onclick="startCreatorCourse()"> Creator's Path (Freestyle drills) </button>
+    <button class="pop-btn" onclick="goPage('p-learn-or-play')"> ◀ Back </button>
+  </div>
+  <div id="p-formulas" class="page">
+    <h1>Formula Roadmap</h1>
+    <p>Pick your system and unlock milestones step by step.</p>
+    <div style="margin-top:15px;">
+      <button class="pop-btn" onclick="goPage('p-roadmap-beginner')"> Beginner System (White Cross → F2L → OLL → PLL) </button>
+    </div>
+    <div style="margin-top:10px;">
+      <button class="pop-btn" onclick="goPage('p-roadmap-cfop')"> CFOP Track (Speedcubing) </button>
+    </div>
+    <div style="margin-top:10px;">
+      <button class="pop-btn" onclick="goPage('p-roadmap-creator')"> Creator's Choice (Custom) </button>
+    </div>
+    <button class="pop-btn" onclick="goPage('p-learn-or-play')"> ◀ Back </button>
+  </div>
+  <div id="p-roadmap-beginner" class="page">
+    <h1>Beginner Roadmap</h1>
+    <p>Follow the milestones in order.</p>
+    <!-- White Cross (no formulas, just instructions) -->
+    <div class="milestone">
+      <div class="circle-dot"></div>
+      <div>
+        <h3>Step 1: White Cross</h3>
+        <p>No formulas. Learn intuitive moves to make + on the white face.</p>
+        <button class="pop-btn" onclick="openWhiteCrossLesson()"> Start White Cross </button>
+      </div>
+    </div>
+    <!-- F2L -->
+    <div class="milestone">
+      <div class="circle-dot"></div>
+      <div>
+        <h3>Step 2: F2L (First Two Layers)</h3>
+        <p>Learn simple pair‑insertion cases, one at a time.</p>
+        <button class="pop-btn" onclick="openF2LLesson()"> F2L Cases </button>
+      </div>
+    </div>
+    <!-- OLL -->
+    <div class="milestone">
+      <div class="circle-dot"></div>
+      <div>
+        <h3>Step 3: OLL (Orient Last Layer)</h3>
+        <p>Use a small set of starter algorithms to make the top color solid.</p>
+        <button class="pop-btn" onclick="openOLLLesson()"> OLL Basics </button>
+      </div>
+    </div>
+    <!-- PLL -->
+    <div class="milestone">
+      <div class="circle-dot"></div>
+      <div>
+        <h3>Step 4: PLL (Permute Last Layer)</h3>
+        <p>Finish the cube with a small set of easy PLL cases.</p>
+        <button class="pop-btn" onclick="openPLLLesson()"> PLL Basics </button>
+      </div>
+    </div>
+    <button class="pop-btn" onclick="goPage('p-formulas')">◀ Back</button>
+  </div>
+  <div id="p-roadmap-cfop" class="page">
+    <h1>CFOP Track</h1>
+    <p>Follow the milestones in order.</p>
+    <!-- Cross -->
+    <div class="milestone">
+      <div class="circle-dot"></div>
+      <div>
+        <h3>Step 1: Cross</h3>
+        <p>Advanced cross techniques.</p>
+        <button class="pop-btn" onclick="openCrossLesson()"> Start Cross </button>
+      </div>
+    </div>
+    <!-- F2L Advanced -->
+    <div class="milestone">
+      <div class="circle-dot"></div>
+      <div>
+        <h3>Step 2: F2L Advanced</h3>
+        <p>Full F2L algorithms for speed.</p>
+        <button class="pop-btn" onclick="openAdvancedF2LLesson()"> Advanced F2L </button>
+      </div>
+    </div>
+    <!-- 2-Look OLL -->
+    <div class="milestone">
+      <div class="circle-dot"></div>
+      <div>
+        <h3>Step 3: 2-Look OLL</h3>
+        <p>Two-look orientation algorithms.</p>
+        <button class="pop-btn" onclick="open2LookOLLLesson()"> 2-Look OLL </button>
+      </div>
+    </div>
+    <!-- Full PLL -->
+    <div class="milestone">
+      <div class="circle-dot"></div>
+      <div>
+        <h3>Step 4: Full PLL</h3>
+        <p>All PLL cases for speedcubing.</p>
+        <button class="pop-btn" onclick="openFullPLLLesson()"> Full PLL </button>
+      </div>
+    </div>
+    <button class="pop-btn" onclick="goPage('p-formulas')">◀ Back</button>
+  </div>
+  <div id="p-roadmap-creator" class="page">
+    <h1>Creator's Choice</h1>
+    <p>Follow the milestones in order.</p>
+    <!-- Custom Alg Builder -->
+    <div class="milestone">
+      <div class="circle-dot"></div>
+      <div>
+        <h3>Step 1: Custom Alg Builder</h3>
+        <p>Build your own algorithms.</p>
+        <button class="pop-btn" onclick="openAlgBuilderLesson()"> Start Alg Builder </button>
+      </div>
+    </div>
+    <!-- Drill Mode -->
+    <div class="milestone">
+      <div class="circle-dot"></div>
+      <div>
+        <h3>Step 2: Drill Mode</h3>
+        <p>Practice custom drills.</p>
+        <button class="pop-btn" onclick="openDrillModeLesson()"> Drill Mode </button>
+      </div>
+    </div>
+    <button class="pop-btn" onclick="goPage('p-formulas')">◀ Back</button>
   </div>
   <div id="p-warn" class="page">
     <h1 style="color:#ff3333">⚠ BEWARE ⚠</h1>
@@ -249,6 +390,84 @@ function initApp(method){
   document.getElementById('overlay').style.display='none';
   document.getElementById('main-app').style.display='grid';
   document.getElementById('method-title').innerText = method + " HUB";
+  setup3D();
+}
+function initInteractiveCube() {
+  document.getElementById('overlay').style.display = 'none';
+  document.getElementById('main-app').style.display = 'grid';
+  document.getElementById('method-title').innerText = "Interactive Cube";
+  setup3D(); // same as now
+}
+function startBeginnerCourse() {
+  document.getElementById('overlay').style.display = 'none';
+  document.getElementById('main-app').style.display = 'grid';
+  document.getElementById('method-title').innerText = "Beginner Path";
+  setup3D();
+}
+function startCreatorCourse() {
+  document.getElementById('overlay').style.display = 'none';
+  document.getElementById('main-app').style.display = 'grid';
+  document.getElementById('method-title').innerText = "Creator's Path";
+  setup3D();
+}
+function openWhiteCrossLesson() {
+  document.getElementById('overlay').style.display = 'none';
+  document.getElementById('main-app').style.display = 'grid';
+  document.getElementById('method-title').innerText = "White Cross";
+  setup3D();
+}
+function openF2LLesson() {
+  document.getElementById('overlay').style.display = 'none';
+  document.getElementById('main-app').style.display = 'grid';
+  document.getElementById('method-title').innerText = "F2L";
+  setup3D();
+}
+function openOLLLesson() {
+  document.getElementById('overlay').style.display = 'none';
+  document.getElementById('main-app').style.display = 'grid';
+  document.getElementById('method-title').innerText = "OLL";
+  setup3D();
+}
+function openPLLLesson() {
+  document.getElementById('overlay').style.display = 'none';
+  document.getElementById('main-app').style.display = 'grid';
+  document.getElementById('method-title').innerText = "PLL";
+  setup3D();
+}
+function openCrossLesson() {
+  document.getElementById('overlay').style.display = 'none';
+  document.getElementById('main-app').style.display = 'grid';
+  document.getElementById('method-title').innerText = "Cross";
+  setup3D();
+}
+function openAdvancedF2LLesson() {
+  document.getElementById('overlay').style.display = 'none';
+  document.getElementById('main-app').style.display = 'grid';
+  document.getElementById('method-title').innerText = "Advanced F2L";
+  setup3D();
+}
+function open2LookOLLLesson() {
+  document.getElementById('overlay').style.display = 'none';
+  document.getElementById('main-app').style.display = 'grid';
+  document.getElementById('method-title').innerText = "2-Look OLL";
+  setup3D();
+}
+function openFullPLLLesson() {
+  document.getElementById('overlay').style.display = 'none';
+  document.getElementById('main-app').style.display = 'grid';
+  document.getElementById('method-title').innerText = "Full PLL";
+  setup3D();
+}
+function openAlgBuilderLesson() {
+  document.getElementById('overlay').style.display = 'none';
+  document.getElementById('main-app').style.display = 'grid';
+  document.getElementById('method-title').innerText = "Alg Builder";
+  setup3D();
+}
+function openDrillModeLesson() {
+  document.getElementById('overlay').style.display = 'none';
+  document.getElementById('main-app').style.display = 'grid';
+  document.getElementById('method-title').innerText = "Drill Mode";
   setup3D();
 }
 /* 3D setup */
