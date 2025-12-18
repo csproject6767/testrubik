@@ -28,7 +28,8 @@ body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000;
   top: 50%; 
   left: 30px; 
   transform: translateY(-50%); 
-  display: grid; 
+  display: flex; 
+  flex-direction: column;
   gap: 12px; 
   z-index: 100; 
 }
@@ -107,8 +108,8 @@ body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000;
 <h2 id="method-title">SYSTEM</h2>
 <div class="lesson-box">
 <h3>Lesson 1: Notations</h3>
-<p><b>Arrows snap camera</b> → R=Right F=Forward always!</p>
-<p><b>R=Right L=Left F=Forward B=Back U=Up D=Down</b></p>
+<p><b>F/R/B/L/U/D</b> = Snap + reorient cube</p>
+<p><b>Buttons = screen-relative** (R=screen-right always!)</b></p>
 </div>
 <button class="pop-btn" style="margin-top:auto" onclick="scramble()">SCRAMBLE</button>
 <button class="pop-btn" style="font-size:0.8rem" onclick="playDemo()">DEMO: R</button>
@@ -116,35 +117,35 @@ body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000;
 </div>
 
 <div id="cube-container">
-<!-- CAMERA SNAP - VERTICAL STACK -->
+<!-- SNAP + REORIENT BUTTONS -->
 <div class="camera-arrows">
-<button class="camera-btn" onclick="snapView('front')">F</button>
-<button class="camera-btn" onclick="snapView('right')">R</button>
-<button class="camera-btn" onclick="snapView('back')">B</button>
-<button class="camera-btn" onclick="snapView('left')">L</button>
-<button class="camera-btn" onclick="snapView('top')">U</button>
-<button class="camera-btn" onclick="snapView('bottom')">D</button>
+<button class="camera-btn" onclick="snapAndReorient('front')">F</button>
+<button class="camera-btn" onclick="snapAndReorient('right')">R</button>
+<button class="camera-btn" onclick="snapAndReorient('back')">B</button>
+<button class="camera-btn" onclick="snapAndReorient('left')">L</button>
+<button class="camera-btn" onclick="snapAndReorient('up')">U</button>
+<button class="camera-btn" onclick="snapAndReorient('down')">D</button>
 </div>
 
-<!-- MOVES SPREAD OUT -->
+<!-- **SCREEN-RELATIVE MOVES** -->
 <div class="move-top-left">
-<button class="move-btn" onclick="doMove('L')">L</button>
-<button class="move-btn" onclick="doMove('L\'')">L'</button>
+<button class="move-btn" onclick="screenMove('left')">L</button>
+<button class="move-btn" onclick="screenMove('left_prime')">L'</button>
 </div>
 
 <div class="move-top-right">
-<button class="move-btn" onclick="doMove('R')">R</button>
-<button class="move-btn" onclick="doMove('R\'')">R'</button>
+<button class="move-btn" onclick="screenMove('right')">R</button>
+<button class="move-btn" onclick="screenMove('right_prime')">R'</button>
 </div>
 
 <div class="move-bottom-left">
-<button class="move-btn" onclick="doMove('B')">B</button>
-<button class="move-btn" onclick="doMove('B\'')">B'</button>
+<button class="move-btn" onclick="screenMove('back')">B</button>
+<button class="move-btn" onclick="screenMove('back_prime')">B'</button>
 </div>
 
 <div class="move-bottom-right">
-<button class="move-btn" onclick="doMove('F')">F</button>
-<button class="move-btn" onclick="doMove('F\'')">F'</button>
+<button class="move-btn" onclick="screenMove('front')">F</button>
+<button class="move-btn" onclick="screenMove('front_prime')">F'</button>
 </div>
 </div>
 </div>
@@ -153,16 +154,25 @@ body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000;
 let scene, camera, renderer;
 let cubies = [], cubeGroup = new THREE.Group();
 let isRotating = false;
-let currentView = 'front';
 
-// **PERFECT FACE VIEWS** - R=Right F=Forward ALWAYS
-const faceViews = {
-  front:  { pos: [0, 3, 12],  rot: [0, 0, 0],    label: 'F' },
-  right:  { pos: [12, 3, 0],  rot: [0, -Math.PI/2, 0], label: 'R' },
-  back:   { pos: [0, 3, -12], rot: [0, Math.PI, 0], label: 'B' },
-  left:   { pos: [-12, 3, 0], rot: [0, Math.PI/2, 0], label: 'L' },
-  top:    { pos: [0, 12, 3],  rot: [Math.PI/2, 0, 0], label: 'U' },
-  bottom: { pos: [0, -12, 3], rot: [-Math.PI/2, 0, 0], label: 'D' }
+// **DYNAMIC VIEW SYSTEM** - Cube reorients so screen-right=always R face
+let cubeOrientation = new THREE.Quaternion();
+let currentTargetFace = 'front';
+
+const standardViews = {
+  front: { cameraPos: [0, 3, 12],  cubeRot: [0, 0, 0] },
+  right: { cameraPos: [12, 3, 0],  cubeRot: [0, -Math.PI/2, 0] },
+  back:  { cameraPos: [0, 3, -12], cubeRot: [0, Math.PI, 0] },
+  left:  { cameraPos: [-12, 3, 0], cubeRot: [0, Math.PI/2, 0] },
+  up:    { cameraPos: [0, 12, 3],  cubeRot: [-Math.PI/2, 0, 0] },
+  down:  { cameraPos: [0, -12, 3], cubeRot: [Math.PI/2, 0, 0] }
+};
+
+// **SCREEN-RELATIVE AXIS MAPPING** (R = screen-right face ALWAYS)
+const screenToWorldAxis = {
+  right: 'x', left: 'x', 
+  front: 'z', back: 'z',
+  up: 'y', down: 'y'
 };
 
 function goPage(id) {
@@ -183,8 +193,7 @@ function setup3D() {
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(35, container.clientWidth / container.clientHeight, 0.1, 1000);
   
-  // Start with front view
-  snapView('front');
+  snapAndReorient('front');
   
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setSize(container.clientWidth, container.clientHeight);
@@ -195,27 +204,19 @@ function setup3D() {
   scene.add(new THREE.DirectionalLight(0xffffff, 0.5).position.set(-1, -1, -0.5));
   scene.add(cubeGroup);
   
-  // **CORRECT COLORS BY FACE**
-  const colors = [
-    0xff0000, // right (R) - red
-    0xffa500, // left (L) - orange  
-    0xffffff, // top (U) - white
-    0xffff00, // bottom (D) - yellow
-    0x00ff00, // front (F) - green
-    0x0000ff  // back (B) - blue
-  ];
-  
+  // Standard Rubik's colors: R=Red, O=Orange, W=White, Y=Yellow, G=Green, B=Blue
+  const colors = [0xff0000, 0xffa500, 0xffffff, 0xffff00, 0x00ff00, 0x0000ff];
   for (let x = -1; x <= 1; x++) {
     for (let y = -1; y <= 1; y++) {
       for (let z = -1; z <= 1; z++) {
         if (x === 0 && y === 0 && z === 0) continue;
         const materials = [
-          new THREE.MeshLambertMaterial({ color: colors[0] }), // +X right
-          new THREE.MeshLambertMaterial({ color: colors[1] }), // -X left  
-          new THREE.MeshLambertMaterial({ color: colors[2] }), // +Y top
-          new THREE.MeshLambertMaterial({ color: colors[3] }), // -Y bottom
-          new THREE.MeshLambertMaterial({ color: colors[4] }), // +Z front
-          new THREE.MeshLambertMaterial({ color: colors[5] })  // -Z back
+          new THREE.MeshLambertMaterial({ color: colors[0] }), // +X = Red (R)
+          new THREE.MeshLambertMaterial({ color: colors[1] }), // -X = Orange (O/L)
+          new THREE.MeshLambertMaterial({ color: colors[2] }), // +Y = White (U)
+          new THREE.MeshLambertMaterial({ color: colors[3] }), // -Y = Yellow (D)
+          new THREE.MeshLambertMaterial({ color: colors[4] }), // +Z = Green (F)
+          new THREE.MeshLambertMaterial({ color: colors[5] })  // -Z = Blue (B)
         ];
         const cubie = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.95, 0.95), materials);
         cubie.position.set(x, y, z);
@@ -238,38 +239,42 @@ function setup3D() {
   animate();
 }
 
-// **SNAP TO PROPER FACE VIEW** - R=Right F=Forward ALWAYS
-function snapView(face) {
-  currentView = face;
-  const view = faceViews[face];
+// **SNAP CAMERA + REORIENT CUBE** so screen-right = R face ALWAYS
+function snapAndReorient(targetFace) {
+  const view = standardViews[targetFace];
   
+  // Smooth camera move
   gsap.to(camera.position, {
-    x: view.pos[0],
-    y: view.pos[1],
-    z: view.pos[2],
+    x: view.cameraPos[0],
+    y: view.cameraPos[1],
+    z: view.cameraPos[2],
     duration: 1.5,
     ease: "power2.inOut"
   });
   
-  // Rotate cube to match standard orientation
+  // **REORIENT CUBE** so R face faces screen-right
+  const targetRotation = new THREE.Euler(view.cubeRot[0], view.cubeRot[1], view.cubeRot[2]);
+  const targetQuat = new THREE.Quaternion().setFromEuler(targetRotation);
+  
   gsap.to(cubeGroup.rotation, {
-    x: view.rot[0],
-    y: view.rot[1],
-    z: view.rot[2],
+    x: targetRotation.x,
+    y: targetRotation.y,
+    z: targetRotation.z,
     duration: 1.5,
     ease: "power2.inOut"
   });
+  
+  currentTargetFace = targetFace;
 }
 
-function doMove(face) {
+// **SCREEN-RELATIVE MOVES** - R button = screen-right face ALWAYS
+function screenMove(direction) {
   if (isRotating) return;
-  const prime = face.endsWith("'");
-  const axisMap = {
-    'R': ['x', 1], 'L': ['x', -1],
-    'F': ['z', 1], 'B': ['z', -1],
-    'U': ['y', 1], 'D': ['y', -1]
-  };
-  const [axis, layerSign] = axisMap[face.replace("'", "")];
+  
+  const prime = direction.endsWith('_prime');
+  const axis = screenToWorldAxis[direction.replace('_prime', '')];
+  const layerSign = direction.includes('right') || direction.includes('front') || direction.includes('up') ? 1 : -1;
+  
   handleMove(axis, layerSign, prime);
 }
 
@@ -317,7 +322,7 @@ function handleMove(axis, layerSign, prime) {
 }
 
 function resetView() {
-  snapView('front');
+  snapAndReorient('front');
 }
 
 function animate() {
@@ -326,11 +331,11 @@ function animate() {
   renderer.render(scene, camera);
 }
 
-function playDemo() { doMove('R'); }
+function playDemo() { screenMove('right'); }
 
 function scramble() {
   let moves = 0;
-  const movesList = ['R', 'L', 'F', 'B', 'U', 'D'];
+  const movesList = ['right', 'left', 'front', 'back', 'up', 'down'];
   const interval = setInterval(() => {
     if (isRotating || moves > 20) {
       clearInterval(interval);
@@ -338,7 +343,7 @@ function scramble() {
     }
     const move = movesList[Math.floor(Math.random() * movesList.length)];
     const prime = Math.random() > 0.5;
-    doMove(prime ? move + "'" : move);
+    screenMove(prime ? move + '_prime' : move);
     moves++;
   }, 500);
 }
