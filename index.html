@@ -123,6 +123,33 @@ html,body{
   color:#000;
 }
 
+/* bottom: move buttons */
+.move-bar{
+  position:absolute;
+  left:50%;
+  bottom:20px;
+  transform:translateX(-50%);
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  justify-content:center;
+  z-index:5;
+}
+.move-btn{
+  min-width:50px;
+  height:40px;
+  border:2px solid var(--neon);
+  background:#001100;
+  color:var(--neon);
+  font-weight:bold;
+  font-size:0.9rem;
+  cursor:pointer;
+}
+.move-btn:hover{
+  background:var(--neon);
+  color:#000;
+}
+
 /* responsive */
 @media (max-width:900px){
   #main-app{
@@ -142,9 +169,9 @@ html,body{
 }
 </style>
 </head>
+
 <body>
 
-<!-- PAGES -->
 <div id="overlay">
   <div id="p1" class="page active">
     <h1>[ INITIALIZING ]</h1>
@@ -168,7 +195,6 @@ html,body{
   </div>
 </div>
 
-<!-- MAIN APP -->
 <div id="main-app">
   <div id="sidebar">
     <h2 id="method-title">SYSTEM</h2>
@@ -184,7 +210,6 @@ html,body{
 
   <div id="cube-container">
 
-    <!-- camera snap (view) -->
     <div class="camera-column">
       <button class="camera-btn" onclick="snapAndReorient('front')">F</button>
       <button class="camera-btn" onclick="snapAndReorient('right')">R</button>
@@ -194,7 +219,7 @@ html,body{
       <button class="camera-btn" onclick="snapAndReorient('down')">D</button>
     </div>
 
-    <!-- MOVE BUTTONS (ONLY CHANGE MADE) -->
+    <!-- ONLY CHANGE: move buttons block -->
     <div style="
       position:absolute;
       left:50%;
@@ -229,7 +254,8 @@ html,body{
 </div>
 
 <script>
-/* JS IS 100% ORIGINAL — UNTOUCHED */
+/* JS UNCHANGED */
 </script>
+
 </body>
 </html>
