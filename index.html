@@ -206,24 +206,10 @@ html,body{
     </div>
     <!-- MOVE BUTTONS -->
     <div style="position:absolute; left:50%; bottom:70px; transform:translateX(-50%); display:flex; flex-wrap:wrap; gap:8px; justify-content:center;">
-      <!-- Right face -->
-      <button class="pop-btn" onclick="screenMove('right')">R</button>
-      <button class="pop-btn" onclick="screenMove('right_prime')">R'</button>
-      <!-- Left face -->
-      <button class="pop-btn" onclick="screenMove('left')">L</button>
-      <button class="pop-btn" onclick="screenMove('left_prime')">L'</button>
-      <!-- Front face -->
-      <button class="pop-btn" onclick="screenMove('front')">F</button>
-      <button class="pop-btn" onclick="screenMove('front_prime')">F'</button>
-      <!-- Back face -->
-      <button class="pop-btn" onclick="screenMove('back')">B</button>
-      <button class="pop-btn" onclick="screenMove('back_prime')">B'</button>
-      <!-- Up face -->
-      <button class="pop-btn" onclick="screenMove('up')">U</button>
-      <button class="pop-btn" onclick="screenMove('up_prime')">U'</button>
-      <!-- Down face -->
-      <button class="pop-btn" onclick="screenMove('down')">D</button>
-      <button class="pop-btn" onclick="screenMove('down_prime')">D'</button>
+      <button class="move-btn" onclick="screenMove('right')">R</button>
+      <button class="move-btn" onclick="screenMove('left')">L</button>
+      <button class="move-btn" onclick="screenMove('up')">U</button>
+      <button class="move-btn" onclick="screenMove('down')">D</button>
     </div>
   </div>
 </div>
@@ -233,6 +219,10 @@ let cubies = [];
 let cubeGroup = new THREE.Group();
 let isRotating = false;
 let currentTargetFace = 'front';
+let zoomDistance = 12; // starting distance from cube
+const minZoom = 5;
+const maxZoom = 25;
+
 const standardViews = {
   front:{ cameraPos:[0,3,12], cubeRot:[0,0,0] },
   right:{ cameraPos:[12,3,0], cubeRot:[0,-Math.PI/2,0] },
@@ -311,6 +301,7 @@ function setup3D(){
     camera.updateProjectionMatrix();
     renderer.setSize(container.clientWidth,container.clientHeight);
   });
+  container.addEventListener('wheel', onMouseWheel);
   animate();
 }
 /* snapping view */
@@ -377,6 +368,19 @@ function handleMove(axis, layerSign, prime){
     }
   });
 }
+
+function onMouseWheel(event) {
+  event.preventDefault();
+  const delta = event.deltaY;
+  zoomDistance += delta * 0.01;
+  zoomDistance = Math.min(maxZoom, Math.max(minZoom, zoomDistance));
+  const dir = new THREE.Vector3();
+  camera.getWorldDirection(dir);
+  const center = new THREE.Vector3(0, 0, 0);
+  const newPos = center.clone().add(dir.multiplyScalar(-zoomDistance));
+  camera.position.copy(newPos);
+}
+
 function resetView(){ snapAndReorient('front'); }
 function animate(){
   requestAnimationFrame(animate);
