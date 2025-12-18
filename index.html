@@ -205,7 +205,7 @@ html,body{
       <button class="camera-btn" onclick="snapAndReorient('down')">D</button>
     </div>
 
-    <!-- MOVE BUTTONS (put this inside #cube-container, under the camera buttons) -->
+    <!-- MOVE BUTTONS -->
     <div style="position:absolute; left:50%; bottom:70px; transform:translateX(-50%); display:flex; flex-wrap:wrap; gap:8px; justify-content:center;">
       <!-- Right face -->
       <button class="pop-btn" onclick="screenMove('right')">R</button>
@@ -350,12 +350,13 @@ function handleMove(axis,layerSign,prime){
   isRotating = true;
   const pivot = new THREE.Group();
   scene.add(pivot);
-  const moving = [];
-  cubies.forEach(c=>{
-    const pos = c.position;
-    if(Math.round(pos[axis]) === layerSign){
-      pivot.add(c);
-      moving.push(c);
+  const movingCubies = [];
+  cubies.forEach(cubie => {
+    const worldPos = new THREE.Vector3();
+    cubie.getWorldPosition(worldPos);
+    if (Math.round(worldPos[axis]) === layerSign) {
+      pivot.attach(cubie);
+      movingCubies.push(cubie);
     }
   });
   const angle = (prime ? 1 : -1) * Math.PI/2;
@@ -364,16 +365,17 @@ function handleMove(axis,layerSign,prime){
     duration:0.3,
     ease:"power2.inOut",
     onComplete:()=>{
-      moving.forEach(c=>{
-        cubeGroup.add(c);
-        c.position.set(
-          Math.round(c.position.x),
-          Math.round(c.position.y),
-          Math.round(c.position.z)
+      movingCubies.forEach(cubie => {
+        cubeGroup.attach(cubie);
+        const p = cubie.position;
+        cubie.position.set(
+          Math.round(p.x),
+          Math.round(p.y),
+          Math.round(p.z)
         );
       });
       scene.remove(pivot);
-      isRotating=false;
+      isRotating = false;
     }
   });
 }
