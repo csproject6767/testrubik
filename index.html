@@ -296,7 +296,6 @@ html::before {
 </style>
 </head>
 <body>
-<!-- PAGES -->
 <div id="overlay">
   <div id="p-start" class="page active">
     <h1>CubeZilla Solver</h1>
@@ -304,7 +303,6 @@ html::before {
     <button class="pop-btn" onclick="startSolver()">Start</button>
   </div>
 </div>
-<!-- MAIN APP -->
 <div id="main-app">
   <div id="sidebar">
     <h2 id="method-title">Cube Solver</h2>
@@ -500,11 +498,8 @@ function setup3D() {
           roughness: 0.7
         }));
         const cubie = new THREE.Mesh(geo, materials);
-        cubie.position.set(
-          x * (cubeSize + gap),
-          y * (cubeSize + gap),
-          z * (cubeSize + gap)
-        );
+        const posFactor = cubeSize + gap;
+        cubie.position.set(x * posFactor, y * posFactor, z * posFactor);
         cubies.push(cubie);
         cubeGroup.add(cubie);
       }
@@ -582,7 +577,7 @@ function handleMove(axis, layerSign, prime) {
   cubies.forEach(cubie => {
     const p = cubie.position;
     const threshold = 0.1;
-    if (Math.abs(p[axis] - layerSign * (cubeSize + gap)) < threshold) {
+    if (Math.abs(p[axis] - layerSign * (0.9 + 0.08)) < threshold) {
       pivot.attach(cubie);
       movingCubies.push(cubie);
     }
@@ -616,7 +611,7 @@ function resetCube() {
   cubeOrientation.copy(cubeGroup.quaternion);
   cubies.forEach(cubie => {
     const o = { x: Math.sign(cubie.position.x), y: Math.sign(cubie.position.y), z: Math.sign(cubie.position.z) };
-    cubie.position.set(o.x * (cubeSize + gap), o.y * (cubeSize + gap), o.z * (cubeSize + gap));
+    cubie.position.set(o.x * (0.9 + 0.08), o.y * (0.9 + 0.08), o.z * (0.9 + 0.08));
     cubie.rotation.set(0, 0, 0);
   });
 }
