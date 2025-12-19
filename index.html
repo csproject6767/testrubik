@@ -238,7 +238,7 @@ html::before {
 .move-bar {
   position: absolute;
   left: 50%;
-  bottom: 32px;
+  bottom: 160px;
   transform: translateX(-50%);
   display: flex;
   flex-wrap: wrap;
@@ -250,6 +250,8 @@ html::before {
   border-radius: 24px;
   border: 1px solid var(--border-glow);
   box-shadow: var(--shadow-main);
+  max-width: 95%;
+  overflow: visible;
 }
 .move-btn {
   min-width: 52px;
@@ -682,7 +684,6 @@ function setup3D() {
   snapAndReorient('front');
   cubeGroup.updateMatrixWorld(true);
   cubeOrientation.copy(cubeGroup.quaternion);
-
   window.addEventListener('resize', () => {
     camera.aspect = container.clientWidth / container.clientHeight;
     camera.updateProjectionMatrix();
@@ -693,13 +694,7 @@ function setup3D() {
 }
 function snapAndReorient(targetFace) {
   const view = standardViews[targetFace];
-  gsap.to(camera.position, {
-    x: view.cameraPos[0],
-    y: view.cameraPos[1],
-    z: view.cameraPos[2],
-    duration: 0.8,
-    ease: "power2.inOut"
-  });
+  gsap.to(camera.position, { x: view.cameraPos[0], y: view.cameraPos[1], z: view.cameraPos[2], duration: 0.8, ease: "power2.inOut" });
   const rot = new THREE.Euler(view.cubeRot[0], view.cubeRot[1], view.cubeRot[2]);
   gsap.to(cubeGroup.rotation, {
     x: rot.x,
@@ -708,6 +703,7 @@ function snapAndReorient(targetFace) {
     duration: 0.8,
     ease: "power2.inOut",
     onComplete: () => {
+      // force quaternion to match new rotation for correct screenMove mapping
       cubeGroup.updateMatrixWorld(true);
       cubeOrientation.copy(cubeGroup.quaternion);
     }
