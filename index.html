@@ -628,6 +628,7 @@ let zoomDistance = 12;
 const minZoom = 5;
 const maxZoom = 25;
 let cubeOrientation = new THREE.Quaternion();
+let currentViewFace = 'front';
 const standardViews = {
   front: { cameraPos: [0, 3, 12], cubeRot: [0, 0, 0] },
   right: { cameraPos: [12, 3, 0], cubeRot: [0, -Math.PI / 2, 0] },
@@ -745,30 +746,44 @@ function setup3D() {
   animate();
 }
 function snapAndReorient(targetFace) {
-  if (isRotating) return;
+  if (isRotating) return; // Don't animate if if rotating
+  if (currentViewFace === targetFace) return; // Don't animate if already on this face
   const view = standardViews[targetFace];
-  // Animate camera position
+  currentViewFace = targetFace;
+  // Kill all existing GSAP animations on these objects
+  gsap.killTweensOf(camera.position);
+  gsap.killTweensOf(cubeGroup.rotation);
+  // Reset cube rotation to exact Euler values FIRST
+  cubeGroup.rotation.order = 'XYZ';
+  cubeGroup.rotation.reorder('XYZ');
+  // Animate camera
   gsap.to(camera.position, {
     x: view.cameraPos[0],
     y: view.cameraPos[1],
     z: view.cameraPos[2],
-    duration: 0.7,
-    ease: "power2.inOut"
+    duration: 0.8,
+    ease: "sine.inOut"
   });
-  // Separate animation for each axis to avoid accumulation
-  gsap.to(cubeGroup.rotation, { x: view.cubeRot[0], duration: 0.7, ease: "power2.inOut", overwrite: 'auto' });
-  gsap.to(cubeGroup.rotation, { y: view.cubeRot[1], duration: 0.7, ease: "power2.inOut", overwrite: 'auto' });
-  gsap.to(cubeGroup.rotation, {
+  // Animate cube rotation as a single tween (not separate axes)
+  const rotObj = { x: cubeGroup.rotation.x, y: cubeGroup.rotation.y, z: cubeGroup.rotation.z };
+  gsap.to(rotObj, {
+    x: view.cubeRot[0],
+    y: view.cubeRot[1],
     z: view.cubeRot[2],
-    duration: 0.7,
-    ease: "power2.inOut",
-    overwrite: 'auto',
+    duration: 0.8,
+    ease: "sine.inOut",
+    onUpdate: () => {
+      cubeGroup.rotation.x = rotObj.x;
+      cubeGroup.rotation.y = rotObj.y;
+      cubeGroup.rotation.z = rotObj.z;
+    },
     onComplete: () => {
-      // Force exact final values
-      cubeGroup.rotation.order = 'XYZ';
+      // Force exact final rotation
       cubeGroup.rotation.x = view.cubeRot[0];
       cubeGroup.rotation.y = view.cubeRot[1];
       cubeGroup.rotation.z = view.cubeRot[2];
+      cubeGroup.rotation.order = 'XYZ';
+      // Update orientation tracking
       cubeGroup.updateMatrixWorld(true);
       cubeOrientation.copy(cubeGroup.quaternion);
     }
@@ -846,7 +861,7 @@ function resetView() { snapAndReorient('front'); }
 function animate() {
   requestAnimationFrame(animate);
   cubeOrientation.copy(cubeGroup.quaternion);
-  camera.lookAt(0, 0, 0);
+  camera.lookAt(cubeGroup.position);
   renderer.render(scene, camera);
 }
 function playDemo() { screenMove('R'); }
