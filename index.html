@@ -620,6 +620,8 @@ function getMoveHistorySolution() {
   const reverse = (m) => m.includes('_prime') ? m.replace('_prime', '') : m + '_prime';
   return moveHistory.slice().reverse().map(reverse);
 }
+let currentViewTarget = 'front';
+let isChangingView = false;
 let scene, camera, renderer;
 let cubies = [];
 let cubeGroup = new THREE.Group();
@@ -628,14 +630,13 @@ let zoomDistance = 12;
 const minZoom = 5;
 const maxZoom = 25;
 let cubeOrientation = new THREE.Quaternion();
-let currentViewFace = 'front';
 const standardViews = {
-  front: { cameraPos: [0, 3, 12], cubeRot: [0, 0, 0] },
-  right: { cameraPos: [12, 3, 0], cubeRot: [0, -Math.PI / 2, 0] },
-  back: { cameraPos: [0, 3, -12], cubeRot: [0, Math.PI, 0] },
-  left: { cameraPos: [-12, 3, 0], cubeRot: [0, Math.PI / 2, 0] },
-  up: { cameraPos: [0, 12, 3], cubeRot: [-Math.PI / 2, 0, 0] },
-  down: { cameraPos: [0, -12, 3], cubeRot: [Math.PI / 2, 0, 0] }
+  front: { cameraPos: [0, 3, 12], cubeRotEuler: [0, 0, 0] },
+  right: { cameraPos: [12, 3, 0], cubeRotEuler: [0, -Math.PI / 2, 0] },
+  back: { cameraPos: [0, 3, -12], cubeRotEuler: [0, Math.PI, 0] },
+  left: { cameraPos: [-12, 3, 0], cubeRotEuler: [0, Math.PI / 2, 0] },
+  up: { cameraPos: [0, 12, 3], cubeRotEuler: [-Math.PI / 2, 0, 0] },
+  down: { cameraPos: [0, -12, 3], cubeRotEuler: [Math.PI / 2, 0, 0] }
 };
 const SCREEN_RIGHT = new THREE.Vector3(1, 0, 0);
 const SCREEN_UP = new THREE.Vector3(0, 1, 0);
@@ -746,46 +747,50 @@ function setup3D() {
   animate();
 }
 function snapAndReorient(targetFace) {
-  if (isRotating) return; // Don't animate if if rotating
-  if (currentViewFace === targetFace) return; // Don't animate if already on this face
+  if (isChangingView || isRotating) return;
+  if (currentViewTarget === targetFace) return;
+  isChangingView = true;
+  currentViewTarget = targetFace;
   const view = standardViews[targetFace];
-  currentViewFace = targetFace;
-  // Kill all existing GSAP animations on these objects
+  console.log(`Changing to ${targetFace} view`);
+  // Kill all previous animations
   gsap.killTweensOf(camera.position);
   gsap.killTweensOf(cubeGroup.rotation);
-  // Reset cube rotation to exact Euler values FIRST
-  cubeGroup.rotation.order = 'XYZ';
-  cubeGroup.rotation.reorder('XYZ');
-  // Animate camera
+  // Step 1: Animate camera
   gsap.to(camera.position, {
     x: view.cameraPos[0],
     y: view.cameraPos[1],
     z: view.cameraPos[2],
     duration: 0.8,
-    ease: "sine.inOut"
-  });
-  // Animate cube rotation as a single tween (not separate axes)
-  const rotObj = { x: cubeGroup.rotation.x, y: cubeGroup.rotation.y, z: cubeGroup.rotation.z };
-  gsap.to(rotObj, {
-    x: view.cubeRot[0],
-    y: view.cubeRot[1],
-    z: view.cubeRot[2],
-    duration: 0.8,
-    ease: "sine.inOut",
+    ease: "power2.inOut",
     onUpdate: () => {
-      cubeGroup.rotation.x = rotObj.x;
-      cubeGroup.rotation.y = rotObj.y;
-      cubeGroup.rotation.z = rotObj.z;
+      camera.lookAt(0, 0, 0);
+    }
+  });
+  // Step 2: Animate cube rotation
+  const startRot = { x: cubeGroup.rotation.x, y: cubeGroup.rotation.y, z: cubeGroup.rotation.z };
+  const endRot = { x: view.cubeRotEuler[0], y: view.cubeRotEuler[1], z: view.cubeRotEuler[2] };
+  const animRot = { x: startRot.x, y: startRot.y, z: startRot.z };
+  gsap.to(animRot, {
+    x: endRot.x,
+    y: endRot.y,
+    z: endRot.z,
+    duration: 0.8,
+    ease: "power2.inOut",
+    onUpdate: () => {
+      cubeGroup.rotation.x = animRot.x;
+      cubeGroup.rotation.y = animRot.y;
+      cubeGroup.rotation.z = animRot.z;
     },
     onComplete: () => {
-      // Force exact final rotation
-      cubeGroup.rotation.x = view.cubeRot[0];
-      cubeGroup.rotation.y = view.cubeRot[1];
-      cubeGroup.rotation.z = view.cubeRot[2];
-      cubeGroup.rotation.order = 'XYZ';
-      // Update orientation tracking
+      // Lock to exact values
+      cubeGroup.rotation.x = endRot.x;
+      cubeGroup.rotation.y = endRot.y;
+      cubeGroup.rotation.z = endRot.z;
       cubeGroup.updateMatrixWorld(true);
       cubeOrientation.copy(cubeGroup.quaternion);
+      isChangingView = false;
+      console.log(`Locked to ${targetFace}`);
     }
   });
 }
@@ -813,6 +818,7 @@ function screenMove(move) {
   handleMove(mapping.axisName, mapping.layerSign, prime);
 }
 function handleMove(axis, layerSign, prime) {
+  if (isRotating || isChangingView) return;
   isRotating = true;
   const pivot = new THREE.Group();
   scene.add(pivot);
@@ -861,7 +867,7 @@ function resetView() { snapAndReorient('front'); }
 function animate() {
   requestAnimationFrame(animate);
   cubeOrientation.copy(cubeGroup.quaternion);
-  camera.lookAt(cubeGroup.position);
+  camera.lookAt(0, 0, 0);
   renderer.render(scene, camera);
 }
 function playDemo() { screenMove('R'); }
@@ -889,18 +895,18 @@ function solveCube() {
     setTimeout(() => { sidebar.innerText = originalText; }, 2000);
     return;
   }
-  // Phase 1: Analyzing scramble
+  if (isRotating || isChangingView) return;
   sidebar.innerText = `🔍 SCANNING (${moveHistory.length} moves)...`;
   setTimeout(() => {
-    // Phase 2: Computing solution
     sidebar.innerText = '🧮 COMPUTING SOLUTION...';
     setTimeout(() => {
       const solveSequence = getMoveHistorySolution();
-      // Phase 3: Executing
-      sidebar.innerText = `⚡ SOLVING (${solveSequence.length} moves)...`;
+      sidebar.innerText = `⚡ SOLVING (${solveSequence.length}/${solveSequence.length})...`;
       let moveIndex = 0;
       const solveInterval = setInterval(() => {
-        if (isRotating) return;
+        if (isRotating || isChangingView) {
+          return;
+        }
         if (moveIndex >= solveSequence.length) {
           clearInterval(solveInterval);
           resetMoveHistory();
@@ -908,32 +914,32 @@ function solveCube() {
           setTimeout(() => { sidebar.innerText = originalText; }, 2000);
           return;
         }
-        // Show progress
         const remaining = solveSequence.length - moveIndex;
         sidebar.innerText = `⚡ SOLVING (${remaining}/${solveSequence.length})...`;
         const move = solveSequence[moveIndex];
-        // Execute move WITHOUT recording it again
         let prime = false;
+        let moveName = move;
         if (move.endsWith('_prime')) {
           prime = true;
-          move = move.replace('_prime', '');
+          moveName = move.replace('_prime', '');
         }
         let screenDir;
-        switch (move) {
+        switch (moveName) {
           case 'R': screenDir = 'right'; break;
           case 'L': screenDir = 'left'; break;
           case 'U': screenDir = 'up'; break;
           case 'D': screenDir = 'down'; break;
           case 'F': screenDir = 'front'; break;
           case 'B': screenDir = 'back'; break;
-          default: return;
+          default: moveIndex++; return;
         }
         const mapping = getCubeAxisForScreenDirection(screenDir);
         if (mapping) {
+          isRotating = true;
           handleMove(mapping.axisName, mapping.layerSign, prime);
         }
         moveIndex++;
-      }, 250);
+      }, 300);
     }, 1200);
   }, 1500);
 }
