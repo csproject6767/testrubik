@@ -723,8 +723,10 @@ function setup3D() {
     }
   }
   snapAndReorient('front');
-  cubeGroup.updateMatrixWorld(true);
-  cubeOrientation.copy(cubeGroup.quaternion);
+  setTimeout(() => {
+    cubeGroup.updateMatrixWorld(true);
+    cubeOrientation.copy(cubeGroup.quaternion);
+  }, 100);
   window.addEventListener('resize', () => {
     camera.aspect = container.clientWidth / container.clientHeight;
     camera.updateProjectionMatrix();
@@ -734,21 +736,17 @@ function setup3D() {
   animate();
 }
 function snapAndReorient(targetFace) {
+  if (isRotating) return; // Don't snap while moving
   const view = standardViews[targetFace];
-  gsap.to(camera.position, { x: view.cameraPos[0], y: view.cameraPos[1], z: view.cameraPos[2], duration: 0.8, ease: "power2.inOut" });
-  const rot = new THREE.Euler(view.cubeRot[0], view.cubeRot[1], view.cubeRot[2]);
-  gsap.to(cubeGroup.rotation, {
-    x: rot.x,
-    y: rot.y,
-    z: rot.z,
-    duration: 0.8,
-    ease: "power2.inOut",
-    onComplete: () => {
-      // force quaternion to match new rotation for correct screenMove mapping
-      cubeGroup.updateMatrixWorld(true);
-      cubeOrientation.copy(cubeGroup.quaternion);
-    }
-  });
+  // Snap camera instantly (no animation)
+  camera.position.set(view.cameraPos[0], view.cameraPos[1], view.cameraPos[2]);
+  camera.lookAt(0, 0, 0);
+  // Rotate cube instantly
+  const rot = new THREE.Euler(view.cubeRot[0], view.cubeRot[1], view.cubeRot[2], 'XYZ');
+  cubeGroup.rotation.set(rot.x, rot.y, rot.z);
+  // Force update and lock orientation
+  cubeGroup.updateMatrixWorld(true);
+  cubeOrientation.copy(cubeGroup.quaternion);
 }
 function screenMove(move) {
   if (isRotating) return;
@@ -793,7 +791,6 @@ function handleMove(axis, layerSign, prime) {
       movingCubies.forEach(cubie => {
         cubeGroup.attach(cubie);
         const p = cubie.position;
-        // Snap to nearest integer
         cubie.position.set(
           Math.round(p.x * 10) / 10,
           Math.round(p.y * 10) / 10,
@@ -801,6 +798,9 @@ function handleMove(axis, layerSign, prime) {
         );
       });
       scene.remove(pivot);
+      // Lock orientation after move
+      cubeGroup.updateMatrixWorld(true);
+      cubeOrientation.copy(cubeGroup.quaternion);
       isRotating = false;
     }
   });
