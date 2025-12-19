@@ -608,141 +608,17 @@ html::before {
   </div>
 </div>
 <script>
-// Cube state tracker
-let cubeStateHistory = [];
-function initializeCubeState() {
-  // Standard solved cube state
-  // Each face: U(yellow)=0, R(red)=1, F(blue)=2, D(white)=3, L(orange)=4, B(green)=5
-  return {
-    U: [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    R: [1, 1, 1, 1, 1, 1, 1, 1, 1],
-    F: [2, 2, 2, 2, 2, 2, 2, 2, 2],
-    D: [3, 3, 3, 3, 3, 3, 3, 3, 3],
-    L: [4, 4, 4, 4, 4, 4, 4, 4, 4],
-    B: [5, 5, 5, 5, 5, 5, 5, 5, 5]
-  };
+let moveHistory = []; // Track every move made
+function recordMove(move) {
+  moveHistory.push(move);
 }
-let currentCubeState = initializeCubeState();
-function applyMoveToState(move, state) {
-  // Update state when a move is executed
-  // This is simplified - full version would track each sticker
-  const newState = JSON.parse(JSON.stringify(state));
-  // Rotate the affected face 90 degrees
-  const faceMap = {
-    'R': 'R', 'R_prime': 'R',
-    'L': 'L', 'L_prime': 'L',
-    'U': 'U', 'U_prime': 'U',
-    'D': 'D', 'D_prime': 'D',
-    'F': 'F', 'F_prime': 'F',
-    'B': 'B', 'B_prime': 'B'
-  };
-  const face = faceMap[move];
-  if (face) {
-    // Rotate face clockwise (or counter if prime)
-    const isPrime = move.includes('prime');
-    rotateFace(newState, face, isPrime);
-  }
-  return newState;
+function resetMoveHistory() {
+  moveHistory = [];
 }
-function rotateFace(state, face, reverse) {
-  // Rotate face 90 degrees
-  const f = state[face];
-  if (!reverse) {
-    // Clockwise: [0,1,2,3,4,5,6,7,8] -> [6,3,0,7,4,1,8,5,2]
-    const temp = [f[6], f[3], f[0], f[7], f[4], f[1], f[8], f[5], f[2]];
-    state[face] = temp;
-  } else {
-    // Counter-clockwise: reverse of clockwise
-    const temp = [f[2], f[5], f[8], f[1], f[4], f[7], f[0], f[3], f[6]];
-    state[face] = temp;
-  }
-}
-function isCubeSolved(state) {
-  // Check if each face is uniform color
-  for (let face of Object.values(state)) {
-    const firstColor = face[0];
-    if (!face.every(sticker => sticker === firstColor)) {
-      return false;
-    }
-  }
-  return true;
-}
-function countScrambles(state) {
-  // Estimate how scrambled the cube is
-  let count = 0;
-  for (let face of Object.values(state)) {
-    for (let i = 1; i < face.length; i++) {
-      if (face[i] !== face[0]) count++;
-    }
-  }
-  return count;
-}
-function generateSolveSequence(state) {
-  // Use Kociemba-style algorithm approach
-  // For now, use a comprehensive move sequence
-  // Phase 1: White Cross
-  const phase1 = ['D', 'D_prime', 'F', 'F_prime', 'R', 'R_prime', 'U', 'U_prime'];
-  // Phase 2: First two layers (F2L)
-  const phase2 = [
-    'R', 'U', 'R_prime', 'U_prime', 'R', 'U', 'R_prime', 'U_prime',
-    'R', 'U', 'R_prime', 'U_prime', 'R', 'U', 'R_prime', 'U_prime',
-  ];
-  // Phase 3: Orient last layer (OLL)
-  const phase3 = [
-    'R', 'U', 'R_prime', 'U', 'R', 'U_prime', 'R_prime',
-    'F', 'R', 'U_prime', 'R_prime', 'U_prime', 'R', 'U', 'R_prime', 'F_prime'
-  ];
-  // Phase 4: Permute last layer (PLL)
-  const phase4 = [
-    'R_prime', 'F', 'R_prime', 'B_prime', 'B', 'R', 'F_prime', 'R_prime', 'B_prime', 'B',
-    'R_prime', 'F', 'R_prime', 'B_prime', 'B', 'R', 'F_prime', 'R_prime', 'B_prime', 'B'
-  ];
-  return [...phase1, ...phase2, ...phase3, ...phase4];
-}
-function solveCube() {
-  const sidebar = document.querySelector('#sidebar h2');
-  const originalText = sidebar.innerText;
-  if (isCubeSolved(currentCubeState)) {
-    sidebar.innerText = '✓ ALREADY SOLVED';
-    setTimeout(() => { sidebar.innerText = originalText; }, 2000);
-    return;
-  }
-  // Phase 1: Analyzing scramble
-  sidebar.innerText = '🔍 SCANNING CUBE...';
-  setTimeout(() => {
-    const scrambleCount = countScrambles(currentCubeState);
-    // Phase 2: Computing solution
-    sidebar.innerText = `📊 ANALYZING (${scrambleCount} misaligned)...`;
-    setTimeout(() => {
-      // Phase 3: Planning moves
-      sidebar.innerText = '🧮 PLANNING SOLUTION...';
-      setTimeout(() => {
-        const solveSequence = generateSolveSequence(currentCubeState);
-        // Phase 4: Executing
-        sidebar.innerText = `⚡ SOLVING (${solveSequence.length} moves)...`;
-        let moveIndex = 0;
-        let tempState = JSON.parse(JSON.stringify(currentCubeState));
-        const solveInterval = setInterval(() => {
-          if (isRotating) return;
-          if (moveIndex >= solveSequence.length) {
-            clearInterval(solveInterval);
-            currentCubeState = tempState;
-            sidebar.innerText = '✓ SOLVED!';
-            setTimeout(() => { sidebar.innerText = originalText; }, 2000);
-            return;
-          }
-          const move = solveSequence[moveIndex];
-          screenMove(move);
-          tempState = applyMoveToState(move, tempState);
-          moveIndex++;
-        }, 250);
-      }, 1200);
-    }, 1500);
-  }, 1500);
-}
-function trackMoveInState(move) {
-  // Call this after each move to keep state updated
-  currentCubeState = applyMoveToState(move, currentCubeState);
+function getMoveHistorySolution() {
+  // Reverse all moves to solve
+  const reverse = (m) => m.includes('_prime') ? m.replace('_prime', '') : m + '_prime';
+  return moveHistory.slice().reverse().map(reverse);
 }
 let scene, camera, renderer;
 let cubies = [];
@@ -883,7 +759,7 @@ function snapAndReorient(targetFace) {
     z: view.cubeRot[2],
     duration: 0.6,
     ease: "power2.inOut",
-    overwrite: 'auto', // Cancel any previous animation
+    overwrite: 'auto',
     onComplete: () => {
       // Force exact values to avoid floating point drift
       cubeGroup.rotation.x = view.cubeRot[0];
@@ -913,9 +789,9 @@ function screenMove(move) {
   }
   const mapping = getCubeAxisForScreenDirection(screenDir);
   if (!mapping) return;
+  const finalMove = prime ? move + '_prime' : move;
+  recordMove(finalMove);
   handleMove(mapping.axisName, mapping.layerSign, prime);
-  // Track this move in state
-  trackMoveInState(prime ? move + '_prime' : move);
 }
 function handleMove(axis, layerSign, prime) {
   isRotating = true;
@@ -972,6 +848,7 @@ function animate() {
 }
 function playDemo() { screenMove('R'); }
 function scrambleSmart() {
+  resetMoveHistory();
   let count = 0;
   const moves = ['R','R_prime','L','L_prime','F','F_prime','B','B_prime','U','U_prime','D','D_prime'];
   const randomStops = Math.floor(Math.random() * 5) + 8; // stop between 8-12 moves
@@ -1031,48 +908,57 @@ function estimateMoves(state) {
 function solveCube() {
   const sidebar = document.querySelector('#sidebar h2');
   const originalText = sidebar.innerText;
-  // Phase 1: Analyzing
-  sidebar.innerText = '🔍 ANALYZING...';
+  // Check if there are any moves to undo
+  if (moveHistory.length === 0) {
+    sidebar.innerText = '✓ ALREADY SOLVED';
+    setTimeout(() => { sidebar.innerText = originalText; }, 2000);
+    return;
+  }
+  // Phase 1: Analyzing scramble
+  sidebar.innerText = `🔍 SCANNING (${moveHistory.length} moves)...`;
   setTimeout(() => {
-    const analysis = analyzeCube();
-    if (analysis.isSolved) {
-      sidebar.innerText = '✓ ALREADY SOLVED';
-      setTimeout(() => {
-        sidebar.innerText = originalText;
-      }, 2000);
-      return;
-    }
-    // Phase 2: Computing solution
-    sidebar.innerText = `📊 COMPUTING (${analysis.movesNeeded} moves)`;
+    // Phase 2: Planning reverse
+    sidebar.innerText = '📊 REVERSING SEQUENCE...';
     setTimeout(() => {
+      // Get all moves in reverse
+      const solveSequence = getMoveHistorySolution();
       // Phase 3: Executing
-      sidebar.innerText = '⚡ SOLVING...';
-      // Hardcoded solve sequence (since real solver needs full state tracking)
-      const solveSequence = [
-        'R', 'U', 'R_prime', 'U_prime', 'R', 'U', 'R_prime', 'U_prime',
-        'R', 'U', 'R_prime', 'U_prime', 'R', 'U', 'R_prime', 'U_prime',
-        'R', 'U', 'R_prime', 'U_prime', 'R', 'U', 'R_prime', 'U_prime',
-        'R', 'U', 'R_prime', 'U_prime', 'R', 'U', 'R_prime', 'U_prime',
-        'F', 'R', 'U_prime', 'R_prime', 'U_prime', 'R', 'U', 'R_prime', 'F_prime',
-        'R_prime', 'F', 'R_prime', 'B_prime', 'B', 'R', 'F_prime', 'R_prime', 'B_prime', 'B',
-      ];
+      sidebar.innerText = `⚡ SOLVING (${solveSequence.length} moves)...`;
       let moveIndex = 0;
       const solveInterval = setInterval(() => {
         if (isRotating) return;
         if (moveIndex >= solveSequence.length) {
           clearInterval(solveInterval);
+          resetMoveHistory();
           sidebar.innerText = '✓ SOLVED!';
-          setTimeout(() => {
-            sidebar.innerText = originalText;
-          }, 2000);
+          setTimeout(() => { sidebar.innerText = originalText; }, 2000);
           return;
         }
         const move = solveSequence[moveIndex];
-        screenMove(move);
+        // Execute move WITHOUT recording it again
+        let prime = false;
+        if (move.endsWith('_prime')) {
+          prime = true;
+          move = move.replace('_prime', '');
+        }
+        let screenDir;
+        switch (move) {
+          case 'R': screenDir = 'right'; break;
+          case 'L': screenDir = 'left'; break;
+          case 'U': screenDir = 'up'; break;
+          case 'D': screenDir = 'down'; break;
+          case 'F': screenDir = 'front'; break;
+          case 'B': screenDir = 'back'; break;
+          default: return;
+        }
+        const mapping = getCubeAxisForScreenDirection(screenDir);
+        if (mapping) {
+          handleMove(mapping.axisName, mapping.layerSign, prime);
+        }
         moveIndex++;
-      }, 300);
-    }, 1500); // 1.5 second computing phase
-  }, 1500); // 1.5 second analyzing phase
+      }, 250);
+    }, 1200);
+  }, 1500);
 }
 </script>
 </body>
