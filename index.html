@@ -223,6 +223,7 @@ body {
               onclick="startSolver()">
         ⚡ Free‑play with the cube
       </button>
+      <button class="pop-btn" onclick="startPaintMode()"> 🧩 Solve anything (paint) </button>
     </div>
     <div style="margin-top:10px; padding-top:10px; border-top:1px solid rgba(55,65,81,0.7); display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; color:#9ca3af;">
       <span>Credits: Anirudh · Madhav · Pratik</span>
@@ -259,11 +260,31 @@ body {
       <button class="move-btn" onclick="screenMove('F')">F</button>
       <button class="move-btn" onclick="screenMove('F_prime')">F'</button>
     </div>
+    <div id="paint-palette" style="position:absolute; bottom:90px; right:40px; display:none; gap:10px; align-items:center;">
+      <div onclick="selectPaintColor('U')" style="width:24px;height:24px;border-radius:50%;background:#ffffff;border:2px solid #e5e7eb;cursor:pointer;"></div>
+      <div onclick="selectPaintColor('D')" style="width:24px;height:24px;border-radius:50%;background:#facc15;cursor:pointer;"></div>
+      <div onclick="selectPaintColor('R')" style="width:24px;height:24px;border-radius:50%;background:#ef4444;cursor:pointer;"></div>
+      <div onclick="selectPaintColor('L')" style="width:24px;height:24px;border-radius:50%;background:#f97316;cursor:pointer;"></div>
+      <div onclick="selectPaintColor('F')" style="width:24px;height:24px;border-radius:50%;background:#22c55e;cursor:pointer;"></div>
+      <div onclick="selectPaintColor('B')" style="width:24px;height:24px;border-radius:50%;background:#3b82f6;cursor:pointer;"></div>
+      <button class="pop-btn" style="padding:8px 18px;font-size:0.8rem;margin-left:8px;" onclick="startSolvingPaintedCube()"> Start solving </button>
+    </div>
   </div>
 </div>
 <script>
 let scene, camera, renderer, cubies = [], cubeGroup;
 let moveHistory = [];
+let inputCubeGroup, inputCubies = [];
+let paintMode = false;
+let currentPaintColor = 0xffffff;
+const paintColors = {
+  U: 0xffffff, // white
+  D: 0xffff00, // yellow
+  R: 0xff0000, // red
+  L: 0xffa500, // orange
+  F: 0x00ff00, // green
+  B: 0x0000ff  // blue
+};
 let isRotating = false, isChangingView = false;
 let currentView = { theta: 0, phi: 0.3 };
 const zoomDistance = 12;
@@ -327,6 +348,41 @@ function startSolver() {
   document.getElementById('main-app').style.display = 'grid';
   setup3D();
 }
+function startPaintMode() {
+  if (!scene) {
+    startSolver();
+  }
+  paintMode = true;
+  document.getElementById('paint-palette').style.display = 'flex';
+}
+function exitPaintMode() {
+  paintMode = false;
+  document.getElementById('paint-palette').style.display = 'none';
+}
+function selectPaintColor(face) {
+  currentPaintColor = paintColors[face];
+}
+function startSolvingPaintedCube() {
+  alert('Painted cube ready – now plug in solver logic here.');
+  exitPaintMode();
+}
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+function onPointerDown(event) {
+  if (!paintMode) return;
+  const rect = renderer.domElement.getBoundingClientRect();
+  mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObjects(inputCubies, false);
+  if (intersects.length === 0) return;
+  const hit = intersects[0];
+  const mesh = hit.object;
+  const faceIndex = Math.floor(hit.faceIndex / 2);
+  const mat = mesh.material[faceIndex];
+  if (!mat) return;
+  mat.color.set(currentPaintColor);
+}
 function setup3D() {
   const container = document.getElementById('cube-container');
   scene = new THREE.Scene();
@@ -353,12 +409,34 @@ function setup3D() {
       }
     }
   }
+  // ---- input cube for paint mode (separate from main cube) ----
+  inputCubeGroup = new THREE.Group();
+  scene.add(inputCubeGroup);
+  for (let x = -1; x <= 1; x++) {
+    for (let y = -1; y <= 1; y++) {
+      for (let z = -1; z <= 1; z++) {
+        if (x === 0 && y === 0 && z === 0) continue;
+        const grayMats = new Array(6)
+          .fill(0)
+          .map(() => new THREE.MeshLambertMaterial({ color: 0x374151 }));
+        const ic = new THREE.Mesh(
+          new THREE.BoxGeometry(0.95, 0.95, 0.95),
+          grayMats
+        );
+        ic.position.set(x * 1.4, y * 1.4, z * 1.4);
+        inputCubies.push(ic);
+        inputCubeGroup.add(ic);
+      }
+    }
+  }
+  inputCubeGroup.position.set(-5, 0, 0);
   camera.position.set(
     zoomDistance * Math.cos(currentView.phi) * Math.sin(currentView.theta),
     zoomDistance * Math.sin(currentView.phi),
     zoomDistance * Math.cos(currentView.phi) * Math.cos(currentView.theta)
   );
   camera.lookAt(0, 0, 0);
+  renderer.domElement.addEventListener('pointerdown', onPointerDown);
   animate();
 }
 function snapAndReorient(targetFace) {
@@ -401,9 +479,9 @@ function screenMove(move) {
   // --- compute camera basis vectors in world space ---
   camera.updateMatrixWorld(true);
   const m = camera.matrixWorld.elements;
-  const camRight = new THREE.Vector3( m[0], m[1], m[2] ).normalize();
-  const camUp = new THREE.Vector3( m[4], m[5], m[6] ).normalize();
-  const camForward = new THREE.Vector3( m[8], m[9], m[10] ).normalize().negate();
+  const camRight = new THREE.Vector3(m[0], m[1], m[2]).normalize();
+  const camUp = new THREE.Vector3(m[4], m[5], m[6]).normalize();
+  const camForward = new THREE.Vector3(m[8], m[9], m[10]).normalize().negate();
   // pick the desired direction relative to the *screen*
   let worldDir = new THREE.Vector3();
   switch (screenDir) {
