@@ -374,14 +374,15 @@ let zoomDistance = 12;
 const minZoom = 5;
 const maxZoom = 25;
 let cubeOrientation = new THREE.Quaternion();
-const standardViews = {
-  front: { cameraPos: [0, 3, 12], cubeRot: [0, 0, 0] },
-  right: { cameraPos: [12, 3, 0], cubeRot: [0, -Math.PI / 2, 0] },
-  back: { cameraPos: [0, 3, -12], cubeRot: [0, Math.PI, 0] },
-  left: { cameraPos: [-12, 3, 0], cubeRot: [0, Math.PI / 2, 0] },
-  up: { cameraPos: [0, 12, 3], cubeRot: [-Math.PI / 2, 0, 0] },
-  down: { cameraPos: [0, -12, 3], cubeRot: [Math.PI / 2, 0, 0] }
+const viewAngles = {
+  front: { theta: 0, phi: 0.3 },
+  right: { theta: -Math.PI/2, phi: 0.3 },
+  back: { theta: Math.PI, phi: 0.3 },
+  left: { theta: Math.PI/2, phi: 0.3 },
+  up: { theta: 0, phi: -Math.PI/2 + 0.15 },
+  down: { theta: 0, phi: Math.PI/2 - 0.15 }
 };
+let currentView = { theta: 0, phi: 0.3 };
 const SCREEN_RIGHT = new THREE.Vector3(1, 0, 0);
 const SCREEN_UP = new THREE.Vector3(0, 1, 0);
 const SCREEN_OUT = new THREE.Vector3(0, 0, 1);
@@ -437,19 +438,26 @@ function setup3D() {
   dl2.position.set(-6, -4, -5);
   scene.add(dl2);
   scene.add(cubeGroup);
+  const coreGeo = new THREE.BoxGeometry(3.1, 3.1, 3.1);
+  const coreMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.2, roughness: 0.8 });
+  const core = new THREE.Mesh(coreGeo, coreMat);
+  core.receiveShadow = true;
+  cubeGroup.add(core);
   const colors = {
-    R: 0xff0000, // red
-    L: 0xffa500, // orange
-    U: 0xffff00, // yellow
-    D: 0xffffff, // white
-    F: 0x00ff00, // green
-    B: 0x0000ff  // blue
+    R: 0xff0000,
+    L: 0xffa500,
+    U: 0xffff00,
+    D: 0xffffff,
+    F: 0x00ff00,
+    B: 0x0000ff
   };
+  const cubeSize = 0.9;
+  const gap = 0.08;
   for (let x = -1; x <= 1; x++) {
     for (let y = -1; y <= 1; y++) {
       for (let z = -1; z <= 1; z++) {
         if (x === 0 && y === 0 && z === 0) continue;
-        const geo = new THREE.BoxGeometry(0.98, 0.98, 0.98);
+        const geo = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
         const faceColors = [
           colors.R, // +X
           colors.L, // -X
@@ -470,7 +478,11 @@ function setup3D() {
         });
         const cubie = new THREE.Mesh(geo, materials);
         cubie.userData.originalPos = { x, y, z };
-        cubie.position.set(x, y, z);
+        cubie.position.set(
+          x * (cubeSize + gap),
+          y * (cubeSize + gap),
+          z * (cubeSize + gap)
+        );
         cubies.push(cubie);
         cubeGroup.add(cubie);
       }
@@ -491,35 +503,27 @@ function setup3D() {
 }
 function snapAndReorient(targetFace) {
   if (isRotating || isChangingView) return;
-  const view = standardViews[targetFace];
-  if (!view) return;
+  const target = viewAngles[targetFace];
+  if (!target) return;
   isChangingView = true;
-  gsap.to(camera.position, {
-    x: view.cameraPos[0],
-    y: view.cameraPos[1],
-    z: view.cameraPos[2],
-    duration: 0.6,
-    ease: "power2.inOut",
-    onUpdate: () => camera.lookAt(0, 0, 0)
-  });
-  const startRot = { x: cubeGroup.rotation.x, y: cubeGroup.rotation.y, z: cubeGroup.rotation.z };
-  const endRot = { x: view.cubeRot[0], y: view.cubeRot[1], z: view.cubeRot[2] };
-  const anim = { ...startRot };
+  const start = { theta: currentView.theta, phi: currentView.phi };
+  const anim = { ...start };
   gsap.to(anim, {
-    x: endRot.x,
-    y: endRot.y,
-    z: endRot.z,
+    theta: target.theta,
+    phi: target.phi,
     duration: 0.6,
     ease: "power2.inOut",
     onUpdate: () => {
-      cubeGroup.rotation.x = anim.x;
-      cubeGroup.rotation.y = anim.y;
-      cubeGroup.rotation.z = anim.z;
+      currentView.theta = anim.theta;
+      currentView.phi = anim.phi;
+      const radius = zoomDistance;
+      const x = radius * Math.cos(anim.phi) * Math.sin(anim.theta);
+      const y = radius * Math.sin(anim.phi);
+      const z = radius * Math.cos(anim.phi) * Math.cos(anim.theta);
+      camera.position.set(x, y, z);
+      camera.lookAt(0, 0, 0);
     },
     onComplete: () => {
-      cubeGroup.rotation.set(endRot.x, endRot.y, endRot.z);
-      cubeGroup.updateMatrixWorld(true);
-      cubeOrientation.copy(cubeGroup.quaternion);
       isChangingView = false;
     }
   });
@@ -590,7 +594,7 @@ function resetCube() {
   cubeOrientation.copy(cubeGroup.quaternion);
   cubies.forEach(cubie => {
     const o = cubie.userData.originalPos;
-    cubie.position.set(o.x, o.y, o.z);
+    cubie.position.set(o.x * (cubeSize + gap), o.y * (cubeSize + gap), o.z * (cubeSize + gap));
     cubie.rotation.set(0, 0, 0);
   });
 }
@@ -636,7 +640,6 @@ function solveCube() {
     return;
   }
   if (isRotating || isChangingView) return;
-  // Phase 1: scanning
   titleEl.innerText = `Scanning scramble (${moveHistory.length} moves)...`;
   setSolveInfo('Step 1: Analyzing cross and F2L pairs');
   setTimeout(() => {
@@ -644,7 +647,6 @@ function solveCube() {
     setSolveInfo('Step 2: Checking white cross efficiencies');
     setTimeout(() => {
       const solution = getSolutionSequence();
-      // Fake "found fastest method"
       titleEl.innerText = 'Found fastest method (CFOP variant)';
       setSolveInfo('Using: Optimized F2L + 2-Look OLL + PLL');
       setTimeout(() => {
@@ -693,6 +695,20 @@ function solveCube() {
     }, 1300);
   }, 1500);
 }
+// Optional: arrow keys to orbit the whole cube slowly
+window.addEventListener('keydown', (e) => {
+  if (!cubeGroup || isRotating || isChangingView) return;
+  const step = 0.1;
+  if (e.key === 'ArrowLeft') {
+    cubeGroup.rotation.y += step;
+  } else if (e.key === 'ArrowRight') {
+    cubeGroup.rotation.y -= step;
+  } else if (e.key === 'ArrowUp') {
+    cubeGroup.rotation.x += step;
+  } else if (e.key === 'ArrowDown') {
+    cubeGroup.rotation.x -= step;
+  }
+});
 </script>
 </body>
 </html>
