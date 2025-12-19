@@ -3,282 +3,582 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>CubeZilla - Formula Roadmap</title>
+<title>CubeZilla Solver</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/cubejs@1.3.2/lib/cube.min.js"></script>
 <style>
 :root {
   --bg-main: #020617;
   --bg-panel: #0b1120;
+  --bg-glass: rgba(15, 23, 42, 0.92);
   --accent-primary: #6366f1;
   --accent-glow: #8b5cf6;
+  --accent-soft: #a5b4fc;
   --text-main: #e5e7eb;
   --text-muted: #9ca3af;
+  --border-glow: rgba(99, 102, 241, 0.4);
 }
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
+
 body {
-  width: 100%; height: 100vh; background: var(--bg-main);
-  font-family: -apple-system, system-ui, sans-serif; color: var(--text-main); overflow: hidden;
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(ellipse at top left, rgba(99,102,241,0.18) 0%, transparent 55%),
+    radial-gradient(ellipse at bottom right, rgba(139,92,246,0.16) 0%, transparent 55%),
+    linear-gradient(135deg, #020617 0%, #020617 100%);
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  color: var(--text-main);
+  overflow: hidden;
 }
 
-/* UI Overlay & Pages */
+/* Start overlay */
 #overlay {
-  position: fixed; inset: 0; display: flex; justify-content: center; align-items: center;
-  z-index: 100; background: rgba(2,6,23,0.95);
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+  background: radial-gradient(circle at 10% 10%, rgba(79,70,229,0.35) 0%, transparent 45%),
+              radial-gradient(circle at 90% 90%, rgba(147,51,234,0.3) 0%, transparent 45%),
+              rgba(2,6,23,0.96);
 }
+
 .page {
-  display: none; text-align: left; padding: 40px; max-width: 500px; width: 90vw;
-  background: #0f172a; border-radius: 26px; border: 1px solid rgba(148,163,184,0.3);
-  box-shadow: 0 30px 80px rgba(0,0,0,0.8);
+  text-align: left;
+  padding: 40px 44px 32px;
+  max-width: 480px;
+  width: 90vw;
+  background:
+    linear-gradient(145deg, rgba(15,23,42,0.96) 0%, rgba(15,23,42,0.92) 100%);
+  border-radius: 26px;
+  border: 1px solid rgba(148,163,184,0.4);
+  box-shadow:
+    0 30px 80px rgba(15,23,42,0.9),
+    0 0 40px rgba(79,70,229,0.4);
+  position: relative;
+  overflow: hidden;
 }
-.page.active { display: block; }
 
-/* Buttons & Elements */
-.pop-btn {
-  width: 100%; padding: 14px; margin-top: 12px; border-radius: 999px; border: none;
+.page::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 26px;
+  background: radial-gradient(circle at 0% 0%, rgba(129,140,248,0.4) 0%, transparent 45%),
+              radial-gradient(circle at 100% 100%, rgba(236,72,153,0.3) 0%, transparent 45%);
+  opacity: 0.45;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.page h1 {
+  font-size: 2.1rem;
+  margin-bottom: 12px;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, #e5e7eb, #a5b4fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.page p {
+  margin-bottom: 18px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+/* Buttons */
+.pop-btn, button {
+  padding: 12px 26px;
   background: linear-gradient(135deg, var(--accent-primary), var(--accent-glow));
-  color: white; font-weight: 600; cursor: pointer; text-transform: uppercase;
-}
-.milestone {
-  display: flex; gap: 15px; margin-bottom: 20px; padding: 15px;
-  background: rgba(255,255,255,0.03); border-radius: 15px; border-left: 4px solid var(--accent-primary);
+  color: white;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow:
+    0 18px 40px rgba(59,130,246,0.45),
+    0 0 0 1px rgba(129,140,248,0.6);
 }
 
-/* App Layout */
-#main-app { display: none; height: 100vh; grid-template-columns: 300px 1fr; }
-#sidebar { background: #020617; padding: 20px; border-right: 1px solid #1e293b; }
-#cube-container { position: relative; flex: 1; background: radial-gradient(circle, #1e293b 0%, #020617 100%); }
+.pop-btn::before, button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(60deg, transparent 30%, rgba(255,255,255,0.6) 50%, transparent 70%);
+  transform: translateX(-120%) translateY(-120%);
+  opacity: 0.0;
+}
+
+.pop-btn:hover, button:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow:
+    0 24px 55px rgba(79,70,229,0.6),
+    0 0 0 1px rgba(191,219,254,0.9);
+}
+
+.pop-btn:hover::before, button:hover::before {
+  opacity: 0.35;
+  transform: translateX(120%) translateY(120%);
+  transition: transform 0.55s ease, opacity 0.55s ease;
+}
+
+/* Layout */
+#main-app {
+  display: none;
+  height: 100vh;
+  grid-template-columns: 300px 1fr;
+}
+
+/* Sidebar */
+#sidebar {
+  background: linear-gradient(180deg, #020617 0%, #020617 60%, #020617 100%);
+  border-right: 1px solid rgba(15,23,42,1);
+  padding: 22px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 10px 0 40px rgba(0,0,0,0.6);
+}
+
+#method-title {
+  font-size: 0.9rem;
+  color: var(--accent-soft);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+#sidebar .pop-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+/* Cube area */
+#cube-container {
+  position: relative;
+  flex: 1;
+  background:
+    radial-gradient(circle at 10% 10%, rgba(79,70,229,0.12) 0%, transparent 55%),
+    radial-gradient(circle at 90% 90%, rgba(236,72,153,0.09) 0%, transparent 55%),
+    #020617;
+}
+
+/* Solve info chip */
 #solve-info {
-  position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
-  padding: 8px 18px; background: rgba(15,23,42,0.9); border-radius: 999px; opacity: 0;
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 18px;
+  background: rgba(15,23,42,0.95);
+  border-radius: 999px;
+  border: 1px solid rgba(148,163,184,0.6);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* Camera column */
+.camera-column {
+  position: absolute;
+  top: 50%;
+  left: 24px;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.camera-btn {
+  width: 46px;
+  height: 46px;
+  background: radial-gradient(circle at 30% 0%, #111827, #020617);
+  color: #e5e7eb;
+  border-radius: 14px;
+  border: 1px solid rgba(75,85,99,0.9);
+  cursor: pointer;
+  font-weight: 600;
+  box-shadow: 0 14px 30px rgba(0,0,0,0.7);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s;
+}
+
+.camera-btn:hover {
+  transform: translateY(-2px);
+  border-color: rgba(129,140,248,0.9);
+  box-shadow: 0 18px 40px rgba(79,70,229,0.6);
+}
+
+/* Move bar */
+.move-bar {
+  position: absolute;
+  bottom: 34px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  padding: 14px 16px;
+  background: rgba(15,23,42,0.98);
+  border-radius: 18px;
+  border: 1px solid rgba(51,65,85,0.9);
+  box-shadow:
+    0 22px 50px rgba(0,0,0,0.8),
+    0 0 30px rgba(15,23,42,0.9);
+}
+
+.move-btn {
+  padding: 8px 10px;
+  min-width: 40px;
+  background: #0f172a;
+  color: #e5e7eb;
+  border-radius: 10px;
+  border: 1px solid rgba(55,65,81,0.9);
+  cursor: pointer;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.move-btn:hover {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, #4f46e5, #8b5cf6);
+  border-color: rgba(191,219,254,0.9);
+  box-shadow: 0 16px 35px rgba(79,70,229,0.7);
 }
 </style>
 </head>
 <body>
 
 <div id="overlay">
-  <div id="p1" class="page active">
-    <h1>CubeZilla</h1>
-    <p>The ultimate cinematic 3D solver and learning roadmap.</p>
-    <button class="pop-btn" onclick="goPage('p-interactive-learn')">Get Started</button>
-  </div>
+  <div class="page">
+    <h1>CubeZilla Solver</h1>
+    <p>A cinematic 3D Rubik’s cube that records every move you make and can rewind the entire scramble on command.</p>
+    <p style="margin-bottom: 22px;">
+      Learn how a solver “thinks” through CFOP-style phases while you experiment with your own scrambles.
+    </p>
 
-  <div id="p-interactive-learn" class="page">
-    <h1>Choose Your Mode</h1>
-    <p>Jump straight into the solver or follow our guided learning path.</p>
-    <button class="pop-btn" onclick="startApp()">Interactive Solver</button>
-    <button class="pop-btn" style="background:#334155" onclick="goPage('p-notation-check')">Learning Path</button>
-    <button class="pop-btn" style="background:transparent; border:1px solid #334155" onclick="goPage('p1')">Back</button>
-  </div>
+    <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:26px;">
+      <button class="pop-btn" onclick="startSolver()">
+        ▶ Solve a scramble
+      </button>
 
-  <div id="p-notation-check" class="page">
-    <h1>Cube Notations</h1>
-    <p>Do you already know how to read moves like R, U', or F2?</p>
-    <button class="pop-btn" onclick="goPage('p-level-select')">Yes, I know them</button>
-    <button class="pop-btn" style="background:#334155" onclick="goPage('p-notation-learn')">No, teach me</button>
-  </div>
+      <button class="pop-btn" style="background:linear-gradient(135deg,#0f172a,#111827); box-shadow:none; border:1px solid rgba(148,163,184,0.5); color:#e5e7eb;"
+              onclick="alert('1) Scramble: press “Scramble” or do your own moves.\\n2) Track: the app remembers every move you make.\\n3) Solve: press “Solve” and it replays the exact reverse sequence with CFOP-style commentary.')">
+        ? How does the app work?
+      </button>
 
-  <div id="p-notation-learn" class="page">
-    <h1>Notation Basics</h1>
-    <p><b>R:</b> Right Side Up | <b>L:</b> Left Side Down<br><b>U:</b> Top Clockwise | <b>D:</b> Bottom Clockwise</p>
-    <p><i>Note: An apostrophe (') means turn Counter-Clockwise.</i></p>
-    <button class="pop-btn" onclick="goPage('p-level-select')">I've Got It</button>
-  </div>
-
-  <div id="p-level-select" class="page">
-    <h1>Select Method</h1>
-    <p>Choose the system you want to master.</p>
-    <button class="pop-btn" onclick="goPage('p-formula-roadmap')">Formula Roadmap</button>
-    <button class="pop-btn" style="background:#334155" onclick="alert('Beginner Path selected - Coming Soon')">Beginner Path</button>
-    <button class="pop-btn" style="background:transparent" onclick="goPage('p-notation-check')">Back</button>
-  </div>
-
-  <div id="p-formula-roadmap" class="page">
-    <h1>Formula Roadmap</h1>
-    <p>Unlock milestones step by step.</p>
-    <div class="milestone">
-      <div>
-        <h3>Layer-by-Layer Beginner</h3>
-        <p>Start with white cross and build up.</p>
-        <button class="pop-btn" style="padding:8px" onclick="alert('Beginner Roadmap loading...')">View</button>
-      </div>
+      <button class="pop-btn" style="background:linear-gradient(135deg,#22c55e,#16a34a); box-shadow:0 18px 40px rgba(34,197,94,0.4);"
+              onclick="startSolver()">
+        ⚡ Free‑play with the cube
+      </button>
     </div>
-    <div class="milestone">
-      <div>
-        <h3>CFOP Speedcubing</h3>
-        <p>Advanced system for sub-20 second solves.</p>
-        <button class="pop-btn" style="padding:8px" onclick="goPage('p-cfop-track')">View</button>
-      </div>
-    </div>
-    <button class="pop-btn" style="background:transparent" onclick="goPage('p-level-select')">◀ Back</button>
-  </div>
 
-  <div id="p-cfop-track" class="page">
-    <h1>CFOP Track</h1>
-    <p>This is where your custom CFOP content will live.</p>
-    <button class="pop-btn" onclick="goPage('p-formula-roadmap')">Back to Roadmap</button>
+    <div style="margin-top:10px; padding-top:10px; border-top:1px solid rgba(55,65,81,0.7); display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; color:#9ca3af;">
+      <span>Credits: Anirudh · Madhav · Pratik</span>
+      <span style="opacity:0.8;">v1.0 · experimental</span>
+    </div>
   </div>
 </div>
 
 <div id="main-app">
   <div id="sidebar">
-    <h2 id="method-title">Solver</h2>
+    <h2 id="method-title">CONTROLS</h2>
     <button class="pop-btn" onclick="scramble()">Scramble</button>
     <button class="pop-btn" onclick="solveCube()">Solve</button>
-    <button class="pop-btn" style="background:#334155" onclick="location.reload()">Reset</button>
-    <button class="pop-btn" style="background:#334155" onclick="goPage('p1')">Exit to Menu</button>
+    <button class="pop-btn" onclick="resetCube()">Reset Cube</button>
+    <button class="pop-btn" onclick="resetView()">Reset View</button>
   </div>
   <div id="cube-container">
     <div id="solve-info"></div>
+    <div class="camera-column">
+      <button class="camera-btn" onclick="snapAndReorient('front')">F</button>
+      <button class="camera-btn" onclick="snapAndReorient('right')">R</button>
+      <button class="camera-btn" onclick="snapAndReorient('back')">B</button>
+      <button class="camera-btn" onclick="snapAndReorient('left')">L</button>
+      <button class="camera-btn" onclick="snapAndReorient('up')">U</button>
+      <button class="camera-btn" onclick="snapAndReorient('down')">D</button>
+    </div>
+    <div class="move-bar">
+      <button class="move-btn" onclick="screenMove('R')">R</button>
+      <button class="move-btn" onclick="screenMove('R_prime')">R'</button>
+      <button class="move-btn" onclick="screenMove('L')">L</button>
+      <button class="move-btn" onclick="screenMove('L_prime')">L'</button>
+      <button class="move-btn" onclick="screenMove('U')">U</button>
+      <button class="move-btn" onclick="screenMove('U_prime')">U'</button>
+      <button class="move-btn" onclick="screenMove('F')">F</button>
+      <button class="move-btn" onclick="screenMove('F_prime')">F'</button>
+    </div>
   </div>
 </div>
 
 <script>
-let scene, camera, renderer, cubeGroup, cubies = [];
-let isRotating = false, isAutoSolving = false;
-let cubeOrientation = new THREE.Quaternion();
+let scene, camera, renderer, cubies = [], cubeGroup;
+let moveHistory = [];
+let isRotating = false, isChangingView = false;
+let currentView = { theta: 0, phi: 0.3 };
+const zoomDistance = 12;
 
-// Page Navigation
-function goPage(id) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  document.getElementById('overlay').style.display = 'flex';
-  document.getElementById('main-app').style.display = 'none';
+// solve-technique text
+const solveMessages = {
+  scan: [
+    'Scanning cross & F2L pairs',
+    'Reading current cube pattern',
+    'Estimating piece cycles & orbits',
+    'Profiling edge and corner misplacements'
+  ],
+  eval: [
+    'Comparing CFOP vs beginner routes',
+    'Checking white cross efficiencies',
+    'Preserving existing solved blocks',
+    'Scoring possible first-layer options'
+  ],
+  method: [
+    'Found fastest method: CFOP-style route',
+    'Using: Optimized F2L + 2-Look OLL',
+    'Using: Cross-first CFOP hybrid',
+    'Using: Block-building + CFOP mix'
+  ],
+  execute: [
+    'Executing: Cross → F2L → OLL → PLL',
+    'Executing: Lock cross, build all F2L pairs',
+    'Executing: Orient last layer, then permute',
+    'Executing: Preserve solved slots while finishing LL'
+  ]
+};
+
+function pickRandom(list) {
+  return list[Math.floor(Math.random() * list.length)];
 }
 
-function startApp() {
+function setSolveInfo(text) {
+  const el = document.getElementById('solve-info');
+  if (!el) return;
+  el.textContent = text;
+  el.style.opacity = text ? '1' : '0';
+}
+
+const viewAngles = {
+  front: { theta: 0, phi: 0.3 },
+  right: { theta: -Math.PI/2, phi: 0.3 },
+  back: { theta: Math.PI, phi: 0.3 },
+  left: { theta: Math.PI/2, phi: 0.3 },
+  up: { theta: 0, phi: -Math.PI/2 + 0.2 },
+  down: { theta: 0, phi: Math.PI/2 - 0.2 }
+};
+
+function startSolver() {
   document.getElementById('overlay').style.display = 'none';
   document.getElementById('main-app').style.display = 'grid';
-  if (!scene) setup3D();
+  setup3D();
 }
 
 function setup3D() {
   const container = document.getElementById('cube-container');
   scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(35, container.clientWidth/container.clientHeight, 0.1, 1000);
-  camera.position.set(6, 6, 12);
-  camera.lookAt(0,0,0);
-
+  camera = new THREE.PerspectiveCamera(35, container.clientWidth / container.clientHeight, 0.1, 1000);
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setSize(container.clientWidth, container.clientHeight);
   container.appendChild(renderer.domElement);
 
-  const ambient = new THREE.AmbientLight(0xffffff, 0.8);
-  scene.add(ambient);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+  const dl = new THREE.DirectionalLight(0xffffff, 0.8);
+  dl.position.set(3, 5, 4);
+  scene.add(dl);
 
   cubeGroup = new THREE.Group();
   scene.add(cubeGroup);
 
+  // R, O, W, Y, G, B
   const colors = [0xff0000, 0xffa500, 0xffffff, 0xffff00, 0x00ff00, 0x0000ff];
-  for(let x=-1; x<=1; x++) {
-    for(let y=-1; y<=1; y++) {
-      for(let z=-1; z<=1; z++) {
-        if(x===0 && y===0 && z===0) continue;
-        const mats = colors.map(c => new THREE.MeshLambertMaterial({color: c}));
-        const cubie = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.95, 0.95), mats);
+
+  for (let x = -1; x <= 1; x++) {
+    for (let y = -1; y <= 1; y++) {
+      for (let z = -1; z <= 1; z++) {
+        if (x === 0 && y === 0 && z === 0) continue;
+        const materials = colors.map(c => new THREE.MeshLambertMaterial({ color: c }));
+        const cubie = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.95, 0.95), materials);
         cubie.position.set(x, y, z);
         cubies.push(cubie);
         cubeGroup.add(cubie);
       }
     }
   }
+
+  snapAndReorient('front');
   animate();
 }
 
-function animate() {
-  requestAnimationFrame(animate);
-  renderer.render(scene, camera);
+function snapAndReorient(targetFace) {
+  if (isRotating || isChangingView) return;
+  const target = viewAngles[targetFace];
+  if (!target) return;
+  isChangingView = true;
+  gsap.to(currentView, {
+    theta: target.theta, phi: target.phi, duration: 0.6,
+    onUpdate: () => {
+      camera.position.set(
+        zoomDistance * Math.cos(currentView.phi) * Math.sin(currentView.theta),
+        zoomDistance * Math.sin(currentView.phi),
+        zoomDistance * Math.cos(currentView.phi) * Math.cos(currentView.theta)
+      );
+      camera.lookAt(0, 0, 0);
+    },
+    onComplete: () => { isChangingView = false; }
+  });
 }
 
-// FIX: GLITCHED MOVEMENT LOGIC
-function getCubeAxisForScreenDirection(screenDirName) {
-  let worldDir = new THREE.Vector3();
-  switch (screenDirName) {
-    case 'right': worldDir.set(1, 0, 0); break;
-    case 'left': worldDir.set(-1, 0, 0); break;
-    case 'up': worldDir.set(0, 1, 0); break;
-    case 'down': worldDir.set(0, -1, 0); break;
-    case 'front': worldDir.set(0, 0, 1); break;
-    case 'back': worldDir.set(0, 0, -1); break;
-    default: return null;
+function screenMove(move) {
+  if (isRotating) return;
+  let prime = move.endsWith('_prime');
+  let cleanMove = move.replace('_prime', '');
+  let screenDir;
+  switch (cleanMove) {
+    case 'R': screenDir = 'right'; break;
+    case 'L': screenDir = 'left'; break;
+    case 'U': screenDir = 'up'; break;
+    case 'D': screenDir = 'down'; break;
+    case 'F': screenDir = 'front'; break;
+    case 'B': screenDir = 'back'; break;
   }
 
-  // Apply inverse cube rotation to get local cube axis
+  let worldDir = new THREE.Vector3();
+  if (screenDir === 'right') worldDir.set(1, 0, 0);
+  if (screenDir === 'left') worldDir.set(-1, 0, 0);
+  if (screenDir === 'up') worldDir.set(0, 1, 0);
+  if (screenDir === 'down') worldDir.set(0, -1, 0);
+  if (screenDir === 'front') worldDir.set(0, 0, 1);
+  if (screenDir === 'back') worldDir.set(0, 0, -1);
+
   const inv = cubeGroup.quaternion.clone().invert();
   worldDir.applyQuaternion(inv);
 
-  const ax = Math.abs(worldDir.x), ay = Math.abs(worldDir.y), az = Math.abs(worldDir.z);
   let axisName, layerSign;
+  const ax = Math.abs(worldDir.x), ay = Math.abs(worldDir.y), az = Math.abs(worldDir.z);
+  if (ax > ay && ax > az) { axisName = 'x'; layerSign = worldDir.x > 0 ? 1 : -1; }
+  else if (ay > ax && ay > az) { axisName = 'y'; layerSign = worldDir.y > 0 ? 1 : -1; }
+  else { axisName = 'z'; layerSign = worldDir.z > 0 ? 1 : -1; }
 
-  if (ax > ay && ax > az) {
-    axisName = 'x'; layerSign = worldDir.x > 0 ? 1 : -1;
-  } else if (ay > ax && ay > az) {
-    axisName = 'y'; layerSign = worldDir.y > 0 ? 1 : -1;
-  } else {
-    axisName = 'z'; layerSign = worldDir.z > 0 ? 1 : -1;
-  }
-  return { axisName, layerSign };
+  moveHistory.push(move);
+  handleMove(axisName, layerSign, prime);
 }
 
 function handleMove(axis, layerSign, prime) {
   if (isRotating) return;
   isRotating = true;
   const pivot = new THREE.Group();
-  scene.add(pivot);
-  
-  const movingCubies = [];
-  cubies.forEach(cubie => {
-    const localPos = cubie.position.clone();
-    if (Math.abs(localPos[axis] - layerSign) < 0.1) {
-      pivot.attach(cubie);
-      movingCubies.push(cubie);
+  cubeGroup.add(pivot);
+  const moving = [];
+  cubies.forEach(c => {
+    if (Math.abs(c.position[axis] - layerSign) < 0.1) {
+      pivot.attach(c);
+      moving.push(c);
     }
   });
-
   const angle = (prime ? 1 : -1) * Math.PI / 2;
   gsap.to(pivot.rotation, {
-    [axis]: angle, duration: 0.25, ease: "power2.inOut",
+    [axis]: angle, duration: 0.25,
     onComplete: () => {
-      movingCubies.forEach(cubie => {
-        cubeGroup.attach(cubie);
-        // Snap to nearest integer to avoid drift
-        cubie.position.set(
-          Math.round(cubie.position.x),
-          Math.round(cubie.position.y),
-          Math.round(cubie.position.z)
+      moving.forEach(c => {
+        cubeGroup.attach(c);
+        c.position.set(
+          Math.round(c.position.x),
+          Math.round(c.position.y),
+          Math.round(c.position.z)
         );
       });
       scene.remove(pivot);
+      cubeGroup.updateMatrixWorld(true);
       isRotating = false;
     }
   });
 }
 
-// Simple move wrappers (Simulating R, L, etc. logic)
-function performMove(type, isPrime) {
-  const mapping = {
-    'R': 'right', 'L': 'left', 'U': 'up', 'D': 'down', 'F': 'front', 'B': 'back'
-  };
-  const { axisName, layerSign } = getCubeAxisForScreenDirection(mapping[type]);
-  handleMove(axisName, layerSign, isPrime);
-}
-
-// Global Key Listeners for Testing
-window.addEventListener('keydown', (e) => {
-  if (isRotating) return;
-  const key = e.key.toUpperCase();
-  const isPrime = e.shiftKey;
-  if (['R','L','U','D','F','B'].includes(key)) performMove(key, isPrime);
-});
-
 function scramble() {
   let count = 0;
-  const moves = ['R','L','U','D','F','B'];
+  const moves = ['R','R_prime','L','L_prime','U','U_prime','F','F_prime'];
   const interval = setInterval(() => {
-    performMove(moves[Math.floor(Math.random()*6)], Math.random() > 0.5);
-    if (++count > 15) clearInterval(interval);
+    if (count >= 15) { clearInterval(interval); return; }
+    screenMove(moves[Math.floor(Math.random() * moves.length)]);
+    count++;
   }, 300);
+}
+
+function solveCube() {
+  if (moveHistory.length === 0) return;
+
+  const titleEl = document.getElementById('method-title');
+  const originalTitle = titleEl.innerText;
+
+  const reverseMoves = moveHistory
+    .slice()
+    .reverse()
+    .map(m => m.endsWith('_prime') ? m.replace('_prime','') : m + '_prime');
+
+  titleEl.innerText = 'Analyzing scramble...';
+  setSolveInfo(pickRandom(solveMessages.scan));
+
+  setTimeout(() => {
+    titleEl.innerText = 'Evaluating strategies...';
+    setSolveInfo(pickRandom(solveMessages.eval));
+
+    setTimeout(() => {
+      titleEl.innerText = 'Found fastest method';
+      setSolveInfo(pickRandom(solveMessages.method));
+
+      setTimeout(() => {
+        let idx = 0;
+        const total = reverseMoves.length;
+        titleEl.innerText = `Solving (${total}/${total})...`;
+        setSolveInfo(pickRandom(solveMessages.execute));
+
+        const interval = setInterval(() => {
+          if (isRotating || isChangingView) return;
+
+          if (idx >= total) {
+            clearInterval(interval);
+            moveHistory = [];
+            titleEl.innerText = 'Solved!';
+            setSolveInfo('Cube solved – ready for another scramble');
+            setTimeout(() => {
+              titleEl.innerText = originalTitle;
+              setSolveInfo('');
+            }, 1800);
+            return;
+          }
+
+          const remaining = total - idx;
+          titleEl.innerText = `Solving (${remaining}/${total})...`;
+
+          screenMove(reverseMoves[idx]);
+          idx++;
+        }, 350);
+      }, 900);
+    }, 1100);
+  }, 1100);
+}
+
+function resetCube() {
+  location.reload();
+}
+
+function resetView() { snapAndReorient('front'); }
+
+function animate() {
+  requestAnimationFrame(animate);
+  renderer.render(scene, camera);
 }
 </script>
 </body>
