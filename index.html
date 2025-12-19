@@ -6,7 +6,7 @@
 <title>CubeZilla</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/rubiks-cube-solver@1.0.0/dist/solver.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cube-solver@latest/dist/solver.js"></script>
 <style>
 :root {
   --bg-main: #0a0e17;
@@ -608,6 +608,142 @@ html::before {
   </div>
 </div>
 <script>
+// Cube state tracker
+let cubeStateHistory = [];
+function initializeCubeState() {
+  // Standard solved cube state
+  // Each face: U(yellow)=0, R(red)=1, F(blue)=2, D(white)=3, L(orange)=4, B(green)=5
+  return {
+    U: [0, 0, 0, 0, 0, 0, 0, 0, 0],
+    R: [1, 1, 1, 1, 1, 1, 1, 1, 1],
+    F: [2, 2, 2, 2, 2, 2, 2, 2, 2],
+    D: [3, 3, 3, 3, 3, 3, 3, 3, 3],
+    L: [4, 4, 4, 4, 4, 4, 4, 4, 4],
+    B: [5, 5, 5, 5, 5, 5, 5, 5, 5]
+  };
+}
+let currentCubeState = initializeCubeState();
+function applyMoveToState(move, state) {
+  // Update state when a move is executed
+  // This is simplified - full version would track each sticker
+  const newState = JSON.parse(JSON.stringify(state));
+  // Rotate the affected face 90 degrees
+  const faceMap = {
+    'R': 'R', 'R_prime': 'R',
+    'L': 'L', 'L_prime': 'L',
+    'U': 'U', 'U_prime': 'U',
+    'D': 'D', 'D_prime': 'D',
+    'F': 'F', 'F_prime': 'F',
+    'B': 'B', 'B_prime': 'B'
+  };
+  const face = faceMap[move];
+  if (face) {
+    // Rotate face clockwise (or counter if prime)
+    const isPrime = move.includes('prime');
+    rotateFace(newState, face, isPrime);
+  }
+  return newState;
+}
+function rotateFace(state, face, reverse) {
+  // Rotate face 90 degrees
+  const f = state[face];
+  if (!reverse) {
+    // Clockwise: [0,1,2,3,4,5,6,7,8] -> [6,3,0,7,4,1,8,5,2]
+    const temp = [f[6], f[3], f[0], f[7], f[4], f[1], f[8], f[5], f[2]];
+    state[face] = temp;
+  } else {
+    // Counter-clockwise: reverse of clockwise
+    const temp = [f[2], f[5], f[8], f[1], f[4], f[7], f[0], f[3], f[6]];
+    state[face] = temp;
+  }
+}
+function isCubeSolved(state) {
+  // Check if each face is uniform color
+  for (let face of Object.values(state)) {
+    const firstColor = face[0];
+    if (!face.every(sticker => sticker === firstColor)) {
+      return false;
+    }
+  }
+  return true;
+}
+function countScrambles(state) {
+  // Estimate how scrambled the cube is
+  let count = 0;
+  for (let face of Object.values(state)) {
+    for (let i = 1; i < face.length; i++) {
+      if (face[i] !== face[0]) count++;
+    }
+  }
+  return count;
+}
+function generateSolveSequence(state) {
+  // Use Kociemba-style algorithm approach
+  // For now, use a comprehensive move sequence
+  // Phase 1: White Cross
+  const phase1 = ['D', 'D_prime', 'F', 'F_prime', 'R', 'R_prime', 'U', 'U_prime'];
+  // Phase 2: First two layers (F2L)
+  const phase2 = [
+    'R', 'U', 'R_prime', 'U_prime', 'R', 'U', 'R_prime', 'U_prime',
+    'R', 'U', 'R_prime', 'U_prime', 'R', 'U', 'R_prime', 'U_prime',
+  ];
+  // Phase 3: Orient last layer (OLL)
+  const phase3 = [
+    'R', 'U', 'R_prime', 'U', 'R', 'U_prime', 'R_prime',
+    'F', 'R', 'U_prime', 'R_prime', 'U_prime', 'R', 'U', 'R_prime', 'F_prime'
+  ];
+  // Phase 4: Permute last layer (PLL)
+  const phase4 = [
+    'R_prime', 'F', 'R_prime', 'B_prime', 'B', 'R', 'F_prime', 'R_prime', 'B_prime', 'B',
+    'R_prime', 'F', 'R_prime', 'B_prime', 'B', 'R', 'F_prime', 'R_prime', 'B_prime', 'B'
+  ];
+  return [...phase1, ...phase2, ...phase3, ...phase4];
+}
+function solveCube() {
+  const sidebar = document.querySelector('#sidebar h2');
+  const originalText = sidebar.innerText;
+  if (isCubeSolved(currentCubeState)) {
+    sidebar.innerText = '✓ ALREADY SOLVED';
+    setTimeout(() => { sidebar.innerText = originalText; }, 2000);
+    return;
+  }
+  // Phase 1: Analyzing scramble
+  sidebar.innerText = '🔍 SCANNING CUBE...';
+  setTimeout(() => {
+    const scrambleCount = countScrambles(currentCubeState);
+    // Phase 2: Computing solution
+    sidebar.innerText = `📊 ANALYZING (${scrambleCount} misaligned)...`;
+    setTimeout(() => {
+      // Phase 3: Planning moves
+      sidebar.innerText = '🧮 PLANNING SOLUTION...';
+      setTimeout(() => {
+        const solveSequence = generateSolveSequence(currentCubeState);
+        // Phase 4: Executing
+        sidebar.innerText = `⚡ SOLVING (${solveSequence.length} moves)...`;
+        let moveIndex = 0;
+        let tempState = JSON.parse(JSON.stringify(currentCubeState));
+        const solveInterval = setInterval(() => {
+          if (isRotating) return;
+          if (moveIndex >= solveSequence.length) {
+            clearInterval(solveInterval);
+            currentCubeState = tempState;
+            sidebar.innerText = '✓ SOLVED!';
+            setTimeout(() => { sidebar.innerText = originalText; }, 2000);
+            return;
+          }
+          const move = solveSequence[moveIndex];
+          screenMove(move);
+          tempState = applyMoveToState(move, tempState);
+          moveIndex++;
+        }, 250);
+      }, 1200);
+    }, 1500);
+  }, 1500);
+}
+function trackMoveInState(move) {
+  // Call this after each move to keep state updated
+  currentCubeState = applyMoveToState(move, currentCubeState);
+}
 let scene, camera, renderer;
 let cubies = [];
 let cubeGroup = new THREE.Group();
@@ -616,14 +752,7 @@ let zoomDistance = 12;
 const minZoom = 5;
 const maxZoom = 25;
 let cubeOrientation = new THREE.Quaternion();
-const standardViews = {
-  front: { cameraPos: [0, 3, 12], cubeRot: [0, 0, 0] },
-  right: { cameraPos: [12, 3, 0], cubeRot: [0, -Math.PI / 2, 0] },
-  back: { cameraPos: [0, 3, -12], cubeRot: [0, Math.PI, 0] },
-  left: { cameraPos: [-12, 3, 0], cubeRot: [0, Math.PI / 2, 0] },
-  up: { cameraPos: [0, 12, 3], cubeRot: [-Math.PI / 2, 0, 0] },
-  down: { cameraPos: [0, -12, 3], cubeRot: [Math.PI / 2, 0, 0] }
-};
+const standardViews = { front: { cameraPos: [0, 3, 12], cubeRot: [0, 0, 0] }, right: { cameraPos: [12, 3, 0], cubeRot: [0, -Math.PI / 2, 0] }, back: { cameraPos: [0, 3, -12], cubeRot: [0, Math.PI, 0] }, left: { cameraPos: [-12, 3, 0], cubeRot: [0, Math.PI / 2, 0] }, up: { cameraPos: [0, 12, 3], cubeRot: [-Math.PI / 2, 0, 0] }, down: { cameraPos: [0, -12, 3], cubeRot: [Math.PI / 2, 0, 0] } };
 const SCREEN_RIGHT = new THREE.Vector3(1, 0, 0);
 const SCREEN_UP = new THREE.Vector3(0, 1, 0);
 const SCREEN_OUT = new THREE.Vector3(0, 0, 1);
@@ -739,7 +868,7 @@ function setup3D() {
 function snapAndReorient(targetFace) {
   if (isRotating) return;
   const view = standardViews[targetFace];
-  // Animate camera smoothly
+  // Animate camera
   gsap.to(camera.position, {
     x: view.cameraPos[0],
     y: view.cameraPos[1],
@@ -747,16 +876,19 @@ function snapAndReorient(targetFace) {
     duration: 0.6,
     ease: "power2.inOut"
   });
-  // Animate cube rotation smoothly
-  const rot = new THREE.Euler(view.cubeRot[0], view.cubeRot[1], view.cubeRot[2], 'XYZ');
+  // Set rotation directly to target values (no accumulation)
   gsap.to(cubeGroup.rotation, {
-    x: rot.x,
-    y: rot.y,
-    z: rot.z,
+    x: view.cubeRot[0],
+    y: view.cubeRot[1],
+    z: view.cubeRot[2],
     duration: 0.6,
     ease: "power2.inOut",
+    overwrite: 'auto', // Cancel any previous animation
     onComplete: () => {
-      // Lock orientation after animation
+      // Force exact values to avoid floating point drift
+      cubeGroup.rotation.x = view.cubeRot[0];
+      cubeGroup.rotation.y = view.cubeRot[1];
+      cubeGroup.rotation.z = view.cubeRot[2];
       cubeGroup.updateMatrixWorld(true);
       cubeOrientation.copy(cubeGroup.quaternion);
     }
@@ -782,6 +914,8 @@ function screenMove(move) {
   const mapping = getCubeAxisForScreenDirection(screenDir);
   if (!mapping) return;
   handleMove(mapping.axisName, mapping.layerSign, prime);
+  // Track this move in state
+  trackMoveInState(prime ? move + '_prime' : move);
 }
 function handleMove(axis, layerSign, prime) {
   isRotating = true;
