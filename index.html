@@ -337,20 +337,20 @@ html::before {
     <h1>Welcome to CubeZilla</h1>
     <p>Master the cube with interactive drills and step-by-step systems.</p>
     <p>Choose how you want to learn: play with the cube or follow a guided roadmap.</p>
-    <button class="pop-btn" onclick="goPage('p-notation-check')">Continue</button>
+    <button class="pop-btn" onclick="goPage('p-interactive-learn')">Continue</button>
   </div>
-  <div id="p-mode" class="page">
+  <div id="p-interactive-learn" class="page">
     <h1>Choose Your Arena</h1>
     <p>Pick how you want to train today.</p>
-    <button class="pop-btn" onclick="goPage('p-notation-check')">Learn the Cube</button>
     <button class="pop-btn" onclick="initInteractiveCube()">Interactive Cube Only</button>
+    <button class="pop-btn" onclick="goPage('p-notation-check')">Learn the Cube</button>
   </div>
   <div id="p-notation-check" class="page">
     <h1>Do You Know Cube Notation?</h1>
     <p>Moves are written with letters like R, L, U, D, F, B and small symbols.</p>
     <button class="pop-btn" onclick="goPage('p-notation-learn')">No, teach me the moves</button>
-    <button class="pop-btn" onclick="goPage('p-roadmap-beginner')">Yes, take me to the course</button>
-    <button class="pop-btn" onclick="goPage('p-mode')">◀ Back</button>
+    <button class="pop-btn" onclick="goPage('p-level-select')">Yes, take me to the course</button>
+    <button class="pop-btn" onclick="goPage('p-interactive-learn')">◀ Back</button>
   </div>
   <div id="p-notation-learn" class="page">
     <h1>Notation Crash Course</h1>
@@ -387,36 +387,73 @@ html::before {
     </div>
     <p style="margin-top:15px;">Primes (R', U', etc.) are the same face 90° the other way.</p>
     <p>Double turns (R2) are 180° turns.</p>
-    <button class="pop-btn" onclick="goPage('p-roadmap-beginner')">I understand the notation</button>
+    <button class="pop-btn" onclick="goPage('p-level-select')">I understand the notation</button>
     <button class="pop-btn" onclick="goPage('p-notation-check')">I don't understand yet</button>
     <button class="pop-btn" onclick="goPage('p-notation-check')">◀ Back</button>
   </div>
-  <div id="p-learn-or-play" class="page">
-    <h1>How Do You Want to Learn?</h1>
-    <button class="pop-btn" onclick="goPage('p-coach')">Guided Coach Mode</button>
-    <button class="pop-btn" onclick="goPage('p-formulas')">Formula Roadmap</button>
-    <button class="pop-btn" onclick="goPage('p-mode')">◀ Back</button>
+  <div id="p-level-select" class="page">
+    <h1>Choose Your Level</h1>
+    <button class="pop-btn" onclick="goPage('p-cfop-track')">CFOP Track</button>
+    <button class="pop-btn" onclick="goPage('p-formula-roadmap')">Beginner Roadmap</button>
+    <button class="pop-btn" onclick="goPage('p-notation-check')">◀ Back</button>
   </div>
-  <div id="p-coach" class="page">
-    <h1>Guided Coach Mode</h1>
-    <p>Follow a human-style walkthrough with tips, checks and slow motion demos.</p>
-    <button class="pop-btn" onclick="startBeginnerCourse()">Beginner Path (Layer by Layer)</button>
-    <button class="pop-btn" onclick="startCreatorCourse()">Creator's Path (Freestyle drills)</button>
-    <button class="pop-btn" onclick="goPage('p-learn-or-play')">◀ Back</button>
+  <div id="p-cfop-track" class="page">
+    <h1>CFOP Track</h1>
+    <p>Follow the milestones in order.</p>
+    <div class="milestone">
+      <div class="circle-dot"></div>
+      <div>
+        <h3>Step 1: Cross</h3>
+        <p>Advanced cross techniques.</p>
+        <button class="pop-btn" onclick="openCrossLesson()">Start Cross</button>
+      </div>
+    </div>
+    <div class="milestone">
+      <div class="circle-dot"></div>
+      <div>
+        <h3>Step 2: F2L Advanced</h3>
+        <p>Full F2L algorithms for speed.</p>
+        <button class="pop-btn" onclick="openAdvancedF2LLesson()">Advanced F2L</button>
+      </div>
+    </div>
+    <div class="milestone">
+      <div class="circle-dot"></div>
+      <div>
+        <h3>Step 3: 2-Look OLL</h3>
+        <p>Two-look orientation algorithms.</p>
+        <button class="pop-btn" onclick="open2LookOLLLesson()">2-Look OLL</button>
+      </div>
+    </div>
+    <div class="milestone">
+      <div class="circle-dot"></div>
+      <div>
+        <h3>Step 4: Full PLL</h3>
+        <p>All PLL cases for speedcubing.</p>
+        <button class="pop-btn" onclick="openFullPLLLesson()">Full PLL</button>
+      </div>
+    </div>
+    <button class="pop-btn" onclick="goPage('p-level-select')">◀ Back</button>
   </div>
-  <div id="p-formulas" class="page">
+  <div id="p-formula-roadmap" class="page">
     <h1>Formula Roadmap</h1>
     <p>Pick your system and unlock milestones step by step.</p>
-    <div style="margin-top:15px;">
-      <button class="pop-btn" onclick="goPage('p-roadmap-beginner')">Beginner System (White Cross → F2L → OLL → PLL)</button>
+    <div class="milestone">
+      <div class="circle-dot"></div>
+      <div>
+        <h3>Layer-by-Layer Beginner</h3>
+        <p>Start with white cross and build up.</p>
+        <button class="pop-btn" onclick="goPage('p-roadmap-beginner')">Start</button>
+      </div>
     </div>
-    <div style="margin-top:10px;">
-      <button class="pop-btn" onclick="goPage('p-roadmap-cfop')">CFOP Track (Speedcubing)</button>
+    <div class="milestone">
+      <div class="circle-dot"></div>
+      <div>
+        <h3>CFOP Speedcubing</h3>
+        <p>Advanced method for speed.</p>
+        <button class="pop-btn" onclick="goPage('p-cfop-track')">Start</button>
+      </div>
     </div>
-    <div style="margin-top:10px;">
-      <button class="pop-btn" onclick="goPage('p-roadmap-creator')">Creator's Choice (Custom)</button>
-    </div>
-    <button class="pop-btn" onclick="goPage('p-learn-or-play')">◀ Back</button>
+    <button class="pop-btn" onclick="goPage('p-level-select')">◀ Back</button>
   </div>
   <div id="p-roadmap-beginner" class="page">
     <h1>Layer-by-Layer Course</h1>
@@ -469,7 +506,7 @@ html::before {
         <button class="pop-btn" onclick="startLesson('pll-beginner')">PLL for Beginners</button>
       </div>
     </div>
-    <button class="pop-btn" onclick="goPage('p-formulas')">◀ Back</button>
+    <button class="pop-btn" onclick="goPage('p-formula-roadmap')">◀ Back</button>
   </div>
   <div id="p-roadmap-cfop" class="page">
     <h1>CFOP Track</h1>
@@ -506,7 +543,7 @@ html::before {
         <button class="pop-btn" onclick="openFullPLLLesson()">Full PLL</button>
       </div>
     </div>
-    <button class="pop-btn" onclick="goPage('p-formulas')">◀ Back</button>
+    <button class="pop-btn" onclick="goPage('p-formula-roadmap')">◀ Back</button>
   </div>
   <div id="p-roadmap-creator" class="page">
     <h1>Creator's Choice</h1>
@@ -527,7 +564,7 @@ html::before {
         <button class="pop-btn" onclick="openDrillModeLesson()">Drill Mode</button>
       </div>
     </div>
-    <button class="pop-btn" onclick="goPage('p-formulas')">◀ Back</button>
+    <button class="pop-btn" onclick="goPage('p-formula-roadmap')">◀ Back</button>
   </div>
 </div>
 <!-- MAIN APP -->
@@ -590,31 +627,34 @@ const SCREEN_RIGHT = new THREE.Vector3(1, 0, 0);
 const SCREEN_UP = new THREE.Vector3(0, 1, 0);
 const SCREEN_OUT = new THREE.Vector3(0, 0, 1);
 function getCubeAxisForScreenDirection(screenDirName) {
-  let dirWorld = new THREE.Vector3();
+  // Always use world axes based on current cube orientation
+  let worldDir = new THREE.Vector3();
   switch (screenDirName) {
-    case 'right': dirWorld.copy(SCREEN_RIGHT); break;
-    case 'left': dirWorld.copy(SCREEN_RIGHT).negate(); break;
-    case 'up': dirWorld.copy(SCREEN_UP); break;
-    case 'down': dirWorld.copy(SCREEN_UP).negate(); break;
-    case 'front': dirWorld.copy(SCREEN_OUT); break;
-    case 'back': dirWorld.copy(SCREEN_OUT).negate(); break;
+    case 'right': worldDir.set(1, 0, 0); break;
+    case 'left': worldDir.set(-1, 0, 0); break;
+    case 'up': worldDir.set(0, 1, 0); break;
+    case 'down': worldDir.set(0, -1, 0); break;
+    case 'front': worldDir.set(0, 0, 1); break;
+    case 'back': worldDir.set(0, 0, -1); break;
     default: return null;
   }
+  // Apply inverse cube rotation to get local cube axis
   const inv = cubeOrientation.clone().invert();
-  dirWorld.applyQuaternion(inv);
-  const ax = Math.abs(dirWorld.x);
-  const ay = Math.abs(dirWorld.y);
-  const az = Math.abs(dirWorld.z);
+  worldDir.applyQuaternion(inv);
+  // Find which axis dominates
+  const ax = Math.abs(worldDir.x);
+  const ay = Math.abs(worldDir.y);
+  const az = Math.abs(worldDir.z);
   let axisName, layerSign;
-  if (ax >= ay && ax >= az) {
+  if (ax > ay && ax > az) {
     axisName = 'x';
-    layerSign = dirWorld.x >= 0 ? 1 : -1;
-  } else if (ay >= ax && ay >= az) {
+    layerSign = worldDir.x > 0 ? 1 : -1;
+  } else if (ay > ax && ay > az) {
     axisName = 'y';
-    layerSign = dirWorld.y >= 0 ? 1 : -1;
+    layerSign = worldDir.y > 0 ? 1 : -1;
   } else {
     axisName = 'z';
-    layerSign = dirWorld.z >= 0 ? 1 : -1;
+    layerSign = worldDir.z > 0 ? 1 : -1;
   }
   return { axisName, layerSign };
 }
@@ -737,9 +777,9 @@ function handleMove(axis, layerSign, prime) {
   scene.add(pivot);
   const movingCubies = [];
   cubies.forEach(cubie => {
-    const worldPos = new THREE.Vector3();
-    cubie.getWorldPosition(worldPos);
-    if (Math.round(worldPos[axis]) === layerSign) {
+    const localPos = cubie.position.clone();
+    const threshold = 0.1;
+    if (Math.abs(localPos[axis] - layerSign) < threshold) {
       pivot.attach(cubie);
       movingCubies.push(cubie);
     }
@@ -753,7 +793,12 @@ function handleMove(axis, layerSign, prime) {
       movingCubies.forEach(cubie => {
         cubeGroup.attach(cubie);
         const p = cubie.position;
-        cubie.position.set(Math.round(p.x), Math.round(p.y), Math.round(p.z));
+        // Snap to nearest integer
+        cubie.position.set(
+          Math.round(p.x * 10) / 10,
+          Math.round(p.y * 10) / 10,
+          Math.round(p.z * 10) / 10
+        );
       });
       scene.remove(pivot);
       isRotating = false;
