@@ -353,7 +353,12 @@ function setup3D() {
       }
     }
   }
-  snapAndReorient('front');
+  camera.position.set(
+    zoomDistance * Math.cos(currentView.phi) * Math.sin(currentView.theta),
+    zoomDistance * Math.sin(currentView.phi),
+    zoomDistance * Math.cos(currentView.phi) * Math.cos(currentView.theta)
+  );
+  camera.lookAt(0, 0, 0);
   animate();
 }
 function snapAndReorient(targetFace) {
@@ -393,20 +398,15 @@ function screenMove(move) {
     case 'F': screenDir = 'front'; break;
     case 'B': screenDir = 'back'; break;
   }
-  let worldDir = new THREE.Vector3();
-  if (screenDir === 'right') worldDir.set(1, 0, 0);
-  if (screenDir === 'left') worldDir.set(-1, 0, 0);
-  if (screenDir === 'up') worldDir.set(0, 1, 0);
-  if (screenDir === 'down') worldDir.set(0, -1, 0);
-  if (screenDir === 'front') worldDir.set(0, 0, 1);
-  if (screenDir === 'back') worldDir.set(0, 0, -1);
-  const inv = cubeGroup.quaternion.clone().invert();
-  worldDir.applyQuaternion(inv);
   let axisName, layerSign;
-  const ax = Math.abs(worldDir.x), ay = Math.abs(worldDir.y), az = Math.abs(worldDir.z);
-  if (ax > ay && ax > az) { axisName = 'x'; layerSign = worldDir.x > 0 ? 1 : -1; }
-  else if (ay > ax && ay > az) { axisName = 'y'; layerSign = worldDir.y > 0 ? 1 : -1; }
-  else { axisName = 'z'; layerSign = worldDir.z > 0 ? 1 : -1; }
+  switch (screenDir) {
+    case 'right': axisName = 'x'; layerSign = 1; break;
+    case 'left': axisName = 'x'; layerSign = -1; break;
+    case 'up': axisName = 'y'; layerSign = 1; break;
+    case 'down': axisName = 'y'; layerSign = -1; break;
+    case 'front': axisName = 'z'; layerSign = 1; break;
+    case 'back': axisName = 'z'; layerSign = -1; break;
+  }
   moveHistory.push(move);
   handleMove(axisName, layerSign, prime);
 }
