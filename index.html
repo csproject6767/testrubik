@@ -399,13 +399,15 @@ function screenMove(move) {
     case 'B': screenDir = 'back'; break;
   }
   let axisName, layerSign;
+  // fixed cube axes:
+  // x: right/left, y: up/down, z: front/back
   switch (screenDir) {
-    case 'right': axisName = 'x'; layerSign = 1; break;
-    case 'left': axisName = 'x'; layerSign = -1; break;
-    case 'up': axisName = 'y'; layerSign = 1; break;
-    case 'down': axisName = 'y'; layerSign = -1; break;
-    case 'front': axisName = 'z'; layerSign = 1; break;
-    case 'back': axisName = 'z'; layerSign = -1; break;
+    case 'right': axisName = 'x'; layerSign = 1; break; // R
+    case 'left': axisName = 'x'; layerSign = -1; break; // L
+    case 'up': axisName = 'y'; layerSign = 1; break; // U
+    case 'down': axisName = 'y'; layerSign = -1; break; // D
+    case 'front': axisName = 'z'; layerSign = 1; break; // F
+    case 'back': axisName = 'z'; layerSign = -1; break; // B
   }
   moveHistory.push(move);
   handleMove(axisName, layerSign, prime);
