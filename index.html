@@ -337,14 +337,12 @@ html::before {
     <p>Choose how you want to learn: play with the cube or follow a guided roadmap.</p>
     <button class="pop-btn" onclick="goPage('p-mode')">Continue</button>
   </div>
-
   <div id="p-mode" class="page">
     <h1>Choose Your Arena</h1>
     <p>Pick how you want to train today.</p>
     <button class="pop-btn" onclick="goPage('p-notation-check')">Learn the Cube</button>
     <button class="pop-btn" onclick="initInteractiveCube()">Interactive Cube Only</button>
   </div>
-
   <div id="p-notation-check" class="page">
     <h1>Do You Know Cube Notation?</h1>
     <p>Moves are written with letters like R, L, U, D, F, B and small symbols.</p>
@@ -352,7 +350,6 @@ html::before {
     <button class="pop-btn" onclick="goPage('p-roadmap-beginner')">Yes, take me to the course</button>
     <button class="pop-btn" onclick="goPage('p-mode')">◀ Back</button>
   </div>
-
   <div id="p-notation-learn" class="page">
     <h1>Notation Crash Course</h1>
     <p>Tap a move to see what it does on the cube.</p>
@@ -392,14 +389,12 @@ html::before {
     <button class="pop-btn" onclick="goPage('p-notation-check')">I don't understand yet</button>
     <button class="pop-btn" onclick="goPage('p-notation-check')">◀ Back</button>
   </div>
-
   <div id="p-learn-or-play" class="page">
     <h1>How Do You Want to Learn?</h1>
     <button class="pop-btn" onclick="goPage('p-coach')">Guided Coach Mode</button>
     <button class="pop-btn" onclick="goPage('p-formulas')">Formula Roadmap</button>
     <button class="pop-btn" onclick="goPage('p-mode')">◀ Back</button>
   </div>
-
   <div id="p-coach" class="page">
     <h1>Guided Coach Mode</h1>
     <p>Follow a human-style walkthrough with tips, checks and slow motion demos.</p>
@@ -407,7 +402,6 @@ html::before {
     <button class="pop-btn" onclick="startCreatorCourse()">Creator's Path (Freestyle drills)</button>
     <button class="pop-btn" onclick="goPage('p-learn-or-play')">◀ Back</button>
   </div>
-
   <div id="p-formulas" class="page">
     <h1>Formula Roadmap</h1>
     <p>Pick your system and unlock milestones step by step.</p>
@@ -422,7 +416,6 @@ html::before {
     </div>
     <button class="pop-btn" onclick="goPage('p-learn-or-play')">◀ Back</button>
   </div>
-
   <div id="p-roadmap-beginner" class="page">
     <h1>Layer-by-Layer Course</h1>
     <p>Follow these milestones in order. Each one opens an interactive lesson.</p>
@@ -476,7 +469,6 @@ html::before {
     </div>
     <button class="pop-btn" onclick="goPage('p-formulas')">◀ Back</button>
   </div>
-
   <div id="p-roadmap-cfop" class="page">
     <h1>CFOP Track</h1>
     <p>Follow the milestones in order.</p>
@@ -514,7 +506,6 @@ html::before {
     </div>
     <button class="pop-btn" onclick="goPage('p-formulas')">◀ Back</button>
   </div>
-
   <div id="p-roadmap-creator" class="page">
     <h1>Creator's Choice</h1>
     <p>Follow the milestones in order.</p>
@@ -537,7 +528,6 @@ html::before {
     <button class="pop-btn" onclick="goPage('p-formulas')">◀ Back</button>
   </div>
 </div>
-
 <!-- MAIN APP -->
 <div id="main-app">
   <div id="sidebar">
@@ -576,7 +566,6 @@ html::before {
     </div>
   </div>
 </div>
-
 <script>
 let scene, camera, renderer;
 let cubies = [];
@@ -586,7 +575,6 @@ let zoomDistance = 12;
 const minZoom = 5;
 const maxZoom = 25;
 let cubeOrientation = new THREE.Quaternion();
-
 const standardViews = {
   front: { cameraPos: [0, 3, 12], cubeRot: [0, 0, 0] },
   right: { cameraPos: [12, 3, 0], cubeRot: [0, -Math.PI / 2, 0] },
@@ -595,11 +583,9 @@ const standardViews = {
   up: { cameraPos: [0, 12, 3], cubeRot: [-Math.PI / 2, 0, 0] },
   down: { cameraPos: [0, -12, 3], cubeRot: [Math.PI / 2, 0, 0] }
 };
-
 const SCREEN_RIGHT = new THREE.Vector3(1, 0, 0);
 const SCREEN_UP = new THREE.Vector3(0, 1, 0);
 const SCREEN_OUT = new THREE.Vector3(0, 0, 1);
-
 function getCubeAxisForScreenDirection(screenDirName) {
   let dirWorld = new THREE.Vector3();
   switch (screenDirName) {
@@ -629,19 +615,16 @@ function getCubeAxisForScreenDirection(screenDirName) {
   }
   return { axisName, layerSign };
 }
-
 function goPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
 }
-
 function initInteractiveCube() {
   document.getElementById('overlay').style.display = 'none';
   document.getElementById('main-app').style.display = 'grid';
   document.getElementById('method-title').innerText = "Interactive Cube";
   setup3D();
 }
-
 function startLesson(id) {
   document.getElementById('overlay').style.display = 'none';
   document.getElementById('main-app').style.display = 'grid';
@@ -657,7 +640,6 @@ function startLesson(id) {
   document.getElementById('method-title').innerText = title;
   setup3D();
 }
-
 function playNotationDemo(move) {
   const vid = document.getElementById(`vid-${move}`);
   if (vid) {
@@ -671,7 +653,6 @@ function playNotationDemo(move) {
     setTimeout(() => screenMove(move), 200);
   }
 }
-
 function setup3D() {
   const container = document.getElementById('cube-container');
   scene = new THREE.Scene();
@@ -699,6 +680,9 @@ function setup3D() {
     }
   }
   snapAndReorient('front');
+  cubeGroup.updateMatrixWorld(true);
+  cubeOrientation.copy(cubeGroup.quaternion);
+
   window.addEventListener('resize', () => {
     camera.aspect = container.clientWidth / container.clientHeight;
     camera.updateProjectionMatrix();
@@ -707,14 +691,28 @@ function setup3D() {
   container.addEventListener('wheel', onMouseWheel);
   animate();
 }
-
 function snapAndReorient(targetFace) {
   const view = standardViews[targetFace];
-  gsap.to(camera.position, { x: view.cameraPos[0], y: view.cameraPos[1], z: view.cameraPos[2], duration: 0.8, ease: "power2.inOut" });
+  gsap.to(camera.position, {
+    x: view.cameraPos[0],
+    y: view.cameraPos[1],
+    z: view.cameraPos[2],
+    duration: 0.8,
+    ease: "power2.inOut"
+  });
   const rot = new THREE.Euler(view.cubeRot[0], view.cubeRot[1], view.cubeRot[2]);
-  gsap.to(cubeGroup.rotation, { x: rot.x, y: rot.y, z: rot.z, duration: 0.8, ease: "power2.inOut" });
+  gsap.to(cubeGroup.rotation, {
+    x: rot.x,
+    y: rot.y,
+    z: rot.z,
+    duration: 0.8,
+    ease: "power2.inOut",
+    onComplete: () => {
+      cubeGroup.updateMatrixWorld(true);
+      cubeOrientation.copy(cubeGroup.quaternion);
+    }
+  });
 }
-
 function screenMove(move) {
   if (isRotating) return;
   let prime = false;
@@ -736,7 +734,6 @@ function screenMove(move) {
   if (!mapping) return;
   handleMove(mapping.axisName, mapping.layerSign, prime);
 }
-
 function handleMove(axis, layerSign, prime) {
   isRotating = true;
   const pivot = new THREE.Group();
@@ -766,7 +763,6 @@ function handleMove(axis, layerSign, prime) {
     }
   });
 }
-
 function onMouseWheel(event) {
   event.preventDefault();
   const delta = event.deltaY;
@@ -777,18 +773,14 @@ function onMouseWheel(event) {
   const newPos = new THREE.Vector3(0, 0, 0).add(dir.multiplyScalar(-zoomDistance));
   camera.position.copy(newPos);
 }
-
 function resetView() { snapAndReorient('front'); }
-
 function animate() {
   requestAnimationFrame(animate);
   cubeOrientation.copy(cubeGroup.quaternion);
   camera.lookAt(0, 0, 0);
   renderer.render(scene, camera);
 }
-
 function playDemo() { screenMove('R'); }
-
 function scramble() {
   let count = 0;
   const moves = ['R','R_prime','L','L_prime','F','F_prime','B','B_prime','U','U_prime','D','D_prime'];
