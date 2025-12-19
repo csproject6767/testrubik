@@ -359,40 +359,36 @@ function getReverseMove(move) {
 function getSolutionSequence() {
   return moveHistory.slice().reverse().map(getReverseMove);
 }
+const solveMessages = {
+  scan: [
+    'Step 1: Mapping cross and F2L pairs',
+    'Step 1: Reading current cube pattern',
+    'Step 1: Estimating piece orbits and cycles'
+  ],
+  eval: [
+    'Step 2: Comparing CFOP vs beginner layers',
+    'Step 2: Checking white cross efficiencies',
+    'Step 2: Preserving solved blocks where possible'
+  ],
+  method: [
+    'Using: Optimized F2L + 2-Look OLL + PLL',
+    'Using: Beginner CFOP with efficient inserts',
+    'Using: Cross-first CFOP variant for this scramble'
+  ],
+  execute: [
+    'Executing: Cross → F2L → OLL → PLL',
+    'Executing: Insert F2L pairs, then LL',
+    'Executing: Preserve cross → Build F2L → Solve LL'
+  ]
+};
+function pickRandom(list) {
+  return list[Math.floor(Math.random() * list.length)];
+}
 function setSolveInfo(text) {
   const el = document.getElementById('solve-info');
   if (!el) return;
   el.textContent = text;
   el.style.opacity = text ? '1' : '0';
-}
-const solveMessages = {
-  scan: [
-    'Step 1: Analyzing cross and F2L pairs',
-    'Step 1: Reading current cube pattern',
-    'Step 1: Mapping piece orbits and cycles',
-    'Step 1: Evaluating color layout and centers'
-  ],
-  eval: [
-    'Step 2: Checking white cross efficiencies',
-    'Step 2: Comparing layer-by-layer vs CFOP',
-    'Step 2: Estimating move count for different plans',
-    'Step 2: Prioritizing solved blocks to preserve'
-  ],
-  method: [
-    'Using: Optimized F2L + 2-Look OLL + PLL',
-    'Using: Beginner CFOP with efficient inserts',
-    'Using: Cross-first CFOP variant for this scramble',
-    'Using: Block-building + CFOP hybrid approach'
-  ],
-  execute: [
-    'Executing: Cross → F2L → OLL → PLL',
-    'Executing: Preserve cross → Pair up F2L → Last layer',
-    'Executing: Insert pairs while keeping cross stable',
-    'Executing: Last-layer orientation then permutation'
-  ]
-};
-function pickRandom(list) {
-  return list[Math.floor(Math.random() * list.length)];
 }
 let scene, camera, renderer;
 let cubies = [];
@@ -408,8 +404,8 @@ const viewAngles = {
   right: { theta: -Math.PI/2, phi: 0.3 },
   back: { theta: Math.PI, phi: 0.3 },
   left: { theta: Math.PI/2, phi: 0.3 },
-  up: { theta: 0, phi: -Math.PI/2 + 0.15 },
-  down: { theta: 0, phi: Math.PI/2 - 0.15 }
+  up: { theta: 0, phi: -Math.PI/2 + 0.2 },
+  down: { theta: 0, phi: Math.PI/2 - 0.2 }
 };
 let currentView = { theta: 0, phi: 0.3 };
 const SCREEN_RIGHT = new THREE.Vector3(1, 0, 0);
@@ -467,47 +463,43 @@ function setup3D() {
   dl2.position.set(-6, -4, -5);
   scene.add(dl2);
   scene.add(cubeGroup);
-  // Black plastic core
-  const coreGeo = new THREE.BoxGeometry(3.1, 3.1, 3.1);
-  const coreMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.2, roughness: 0.8 });
-  const core = new THREE.Mesh(coreGeo, coreMat);
-  core.receiveShadow = true;
-  cubeGroup.add(core);
-  const colors = {
-    R: 0xff0000,
-    L: 0xffa500,
-    U: 0xffff00,
-    D: 0xffffff,
-    F: 0x00ff00,
-    B: 0x0000ff
+  // === Rubik's cube colors (real scheme) ===
+  const FACE_COLORS = {
+    R: 0xff0000, // red
+    L: 0xff8800, // orange
+    U: 0xffff00, // yellow
+    D: 0xffffff, // white
+    F: 0x00cc00, // green
+    B: 0x0044ff  // blue
   };
   const cubeSize = 0.9;
   const gap = 0.08;
+  // optional dark core for contrast
+  const coreGeo = new THREE.BoxGeometry(3.1, 3.1, 3.1);
+  const coreMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.2, roughness: 0.9 });
+  const core = new THREE.Mesh(coreGeo, coreMat);
+  core.receiveShadow = true;
+  cubeGroup.add(core);
+  // create 26 visible cubies with colored stickers
   for (let x = -1; x <= 1; x++) {
     for (let y = -1; y <= 1; y++) {
       for (let z = -1; z <= 1; z++) {
         if (x === 0 && y === 0 && z === 0) continue;
         const geo = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
         const faceColors = [
-          colors.R, // +X
-          colors.L, // -X
-          colors.U, // +Y
-          colors.D, // -Y
-          colors.F, // +Z
-          colors.B  // -Z
+          FACE_COLORS.R, // +X
+          FACE_COLORS.L, // -X
+          FACE_COLORS.U, // +Y
+          FACE_COLORS.D, // -Y
+          FACE_COLORS.F, // +Z
+          FACE_COLORS.B  // -Z
         ];
         const materials = faceColors.map(c => new THREE.MeshStandardMaterial({
           color: c,
           metalness: 0.05,
           roughness: 0.7
         }));
-        materials.forEach(m => {
-          m.polygonOffset = true;
-          m.polygonOffsetFactor = 1;
-          m.polygonOffsetUnits = 1;
-        });
         const cubie = new THREE.Mesh(geo, materials);
-        cubie.userData.originalPos = { x, y, z };
         cubie.position.set(
           x * (cubeSize + gap),
           y * (cubeSize + gap),
@@ -623,7 +615,7 @@ function resetCube() {
   cubeGroup.updateMatrixWorld(true);
   cubeOrientation.copy(cubeGroup.quaternion);
   cubies.forEach(cubie => {
-    const o = cubie.userData.originalPos;
+    const o = { x: Math.sign(cubie.position.x), y: Math.sign(cubie.position.y), z: Math.sign(cubie.position.z) };
     cubie.position.set(o.x * (cubeSize + gap), o.y * (cubeSize + gap), o.z * (cubeSize + gap));
     cubie.rotation.set(0, 0, 0);
   });
