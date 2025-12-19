@@ -398,16 +398,40 @@ function screenMove(move) {
     case 'F': screenDir = 'front'; break;
     case 'B': screenDir = 'back'; break;
   }
-  let axisName, layerSign;
-  // fixed cube axes:
-  // x: right/left, y: up/down, z: front/back
+  // --- compute camera basis vectors in world space ---
+  camera.updateMatrixWorld(true);
+  const m = camera.matrixWorld.elements;
+  const camRight = new THREE.Vector3( m[0], m[1], m[2] ).normalize();
+  const camUp = new THREE.Vector3( m[4], m[5], m[6] ).normalize();
+  const camForward = new THREE.Vector3( m[8], m[9], m[10] ).normalize().negate();
+  // pick the desired direction relative to the *screen*
+  let worldDir = new THREE.Vector3();
   switch (screenDir) {
-    case 'right': axisName = 'x'; layerSign = 1; break; // R
-    case 'left': axisName = 'x'; layerSign = -1; break; // L
-    case 'up': axisName = 'y'; layerSign = 1; break; // U
-    case 'down': axisName = 'y'; layerSign = -1; break; // D
-    case 'front': axisName = 'z'; layerSign = 1; break; // F
-    case 'back': axisName = 'z'; layerSign = -1; break; // B
+    case 'right': worldDir.copy(camRight); break;
+    case 'left': worldDir.copy(camRight).negate(); break;
+    case 'up': worldDir.copy(camUp); break;
+    case 'down': worldDir.copy(camUp).negate(); break;
+    case 'front': worldDir.copy(camForward); break;
+    case 'back': worldDir.copy(camForward).negate(); break;
+  }
+  // project that onto the cube's fixed axes (x,y,z)
+  const xAxis = new THREE.Vector3(1,0,0);
+  const yAxis = new THREE.Vector3(0,1,0);
+  const zAxis = new THREE.Vector3(0,0,1);
+  const dotX = worldDir.dot(xAxis);
+  const dotY = worldDir.dot(yAxis);
+  const dotZ = worldDir.dot(zAxis);
+  const ax = Math.abs(dotX), ay = Math.abs(dotY), az = Math.abs(dotZ);
+  let axisName, layerSign;
+  if (ax >= ay && ax >= az) {
+    axisName = 'x';
+    layerSign = dotX > 0 ? 1 : -1;
+  } else if (ay >= ax && ay >= az) {
+    axisName = 'y';
+    layerSign = dotY > 0 ? 1 : -1;
+  } else {
+    axisName = 'z';
+    layerSign = dotZ > 0 ? 1 : -1;
   }
   moveHistory.push(move);
   handleMove(axisName, layerSign, prime);
