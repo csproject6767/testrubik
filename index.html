@@ -334,238 +334,10 @@ html::before {
 <body>
 <!-- PAGES -->
 <div id="overlay">
-  <div id="p1" class="page active">
-    <h1>Welcome to CubeZilla</h1>
-    <p>Master the cube with interactive drills and step-by-step systems.</p>
-    <p>Choose how you want to learn: play with the cube or follow a guided roadmap.</p>
-    <button class="pop-btn" onclick="goPage('p-interactive-learn')">Continue</button>
-  </div>
-  <div id="p-interactive-learn" class="page">
-    <h1>Choose Your Arena</h1>
-    <p>Pick how you want to train today.</p>
-    <button class="pop-btn" onclick="initInteractiveCube()">Interactive Cube Only</button>
-    <button class="pop-btn" onclick="goPage('p-notation-check')">Learn the Cube</button>
-  </div>
-  <div id="p-notation-check" class="page">
-    <h1>Do You Know Cube Notation?</h1>
-    <p>Moves are written with letters like R, L, U, D, F, B and small symbols.</p>
-    <button class="pop-btn" onclick="goPage('p-notation-learn')">No, teach me the moves</button>
-    <button class="pop-btn" onclick="goPage('p-level-select')">Yes, take me to the course</button>
-    <button class="pop-btn" onclick="goPage('p-interactive-learn')">◀ Back</button>
-  </div>
-  <div id="p-notation-learn" class="page">
-    <h1>Notation Crash Course</h1>
-    <p>Tap a move to see what it does on the cube.</p>
-    <div class="notation-row">
-      <button class="pop-btn" onclick="playNotationDemo('R')">R</button>
-      <p>Right face 90° clockwise.</p>
-      <video id="vid-R" class="notation-video" muted loop></video>
-    </div>
-    <div class="notation-row">
-      <button class="pop-btn" onclick="playNotationDemo('L')">L</button>
-      <p>Left face 90° clockwise.</p>
-      <video id="vid-L" class="notation-video" muted loop></video>
-    </div>
-    <div class="notation-row">
-      <button class="pop-btn" onclick="playNotationDemo('U')">U</button>
-      <p>Upper face 90° clockwise.</p>
-      <video id="vid-U" class="notation-video" muted loop></video>
-    </div>
-    <div class="notation-row">
-      <button class="pop-btn" onclick="playNotationDemo('D')">D</button>
-      <p>Down face 90° clockwise.</p>
-      <video id="vid-D" class="notation-video" muted loop></video>
-    </div>
-    <div class="notation-row">
-      <button class="pop-btn" onclick="playNotationDemo('F')">F</button>
-      <p>Front face 90° clockwise.</p>
-      <video id="vid-F" class="notation-video" muted loop></video>
-    </div>
-    <div class="notation-row">
-      <button class="pop-btn" onclick="playNotationDemo('B')">B</button>
-      <p>Back face 90° clockwise.</p>
-      <video id="vid-B" class="notation-video" muted loop></video>
-    </div>
-    <p style="margin-top:15px;">Primes (R', U', etc.) are the same face 90° the other way.</p>
-    <p>Double turns (R2) are 180° turns.</p>
-    <button class="pop-btn" onclick="goPage('p-level-select')">I understand the notation</button>
-    <button class="pop-btn" onclick="goPage('p-notation-check')">I don't understand yet</button>
-    <button class="pop-btn" onclick="goPage('p-notation-check')">◀ Back</button>
-  </div>
-  <div id="p-level-select" class="page">
-    <h1>Choose Your Level</h1>
-    <button class="pop-btn" onclick="goPage('p-cfop-track')">CFOP Track</button>
-    <button class="pop-btn" onclick="goPage('p-formula-roadmap')">Beginner Roadmap</button>
-    <button class="pop-btn" onclick="goPage('p-notation-check')">◀ Back</button>
-  </div>
-  <div id="p-cfop-track" class="page">
-    <h1>CFOP Track</h1>
-    <p>Follow the milestones in order.</p>
-    <div class="milestone">
-      <div class="circle-dot"></div>
-      <div>
-        <h3>Step 1: Cross</h3>
-        <p>Advanced cross techniques.</p>
-        <button class="pop-btn" onclick="openCrossLesson()">Start Cross</button>
-      </div>
-    </div>
-    <div class="milestone">
-      <div class="circle-dot"></div>
-      <div>
-        <h3>Step 2: F2L Advanced</h3>
-        <p>Full F2L algorithms for speed.</p>
-        <button class="pop-btn" onclick="openAdvancedF2LLesson()">Advanced F2L</button>
-      </div>
-    </div>
-    <div class="milestone">
-      <div class="circle-dot"></div>
-      <div>
-        <h3>Step 3: 2-Look OLL</h3>
-        <p>Two-look orientation algorithms.</p>
-        <button class="pop-btn" onclick="open2LookOLLLesson()">2-Look OLL</button>
-      </div>
-    </div>
-    <div class="milestone">
-      <div class="circle-dot"></div>
-      <div>
-        <h3>Step 4: Full PLL</h3>
-        <p>All PLL cases for speedcubing.</p>
-        <button class="pop-btn" onclick="openFullPLLLesson()">Full PLL</button>
-      </div>
-    </div>
-    <button class="pop-btn" onclick="goPage('p-level-select')">◀ Back</button>
-  </div>
-  <div id="p-formula-roadmap" class="page">
-    <h1>Formula Roadmap</h1>
-    <p>Pick your system and unlock milestones step by step.</p>
-    <div class="milestone">
-      <div class="circle-dot"></div>
-      <div>
-        <h3>Layer-by-Layer Beginner</h3>
-        <p>Start with white cross and build up.</p>
-        <button class="pop-btn" onclick="goPage('p-roadmap-beginner')">Start</button>
-      </div>
-    </div>
-    <div class="milestone">
-      <div class="circle-dot"></div>
-      <div>
-        <h3>CFOP Speedcubing</h3>
-        <p>Advanced method for speed.</p>
-        <button class="pop-btn" onclick="goPage('p-cfop-track')">Start</button>
-      </div>
-    </div>
-    <button class="pop-btn" onclick="goPage('p-level-select')">◀ Back</button>
-  </div>
-  <div id="p-roadmap-beginner" class="page">
-    <h1>Layer-by-Layer Course</h1>
-    <p>Follow these milestones in order. Each one opens an interactive lesson.</p>
-    <div class="milestone">
-      <div class="circle-dot"></div>
-      <div>
-        <h3>1. White Cross (No Formulas)</h3>
-        <p>Build a white plus on top while matching side colors.</p>
-        <button class="pop-btn" onclick="startLesson('white-cross')">Open White Cross Lesson</button>
-      </div>
-    </div>
-    <div class="milestone">
-      <div class="circle-dot"></div>
-      <div>
-        <h3>2. White Corners (First Layer)</h3>
-        <p>Place all white corners to complete the first layer.</p>
-        <button class="pop-btn" onclick="startLesson('white-corners')">First Layer Lesson</button>
-      </div>
-    </div>
-    <div class="milestone">
-      <div class="circle-dot"></div>
-      <div>
-        <h3>3. Second Layer Edges</h3>
-        <p>Use simple insert algorithms to fill the middle layer.</p>
-        <button class="pop-btn" onclick="startLesson('second-layer')">Second Layer Lesson</button>
-      </div>
-    </div>
-    <div class="milestone">
-      <div class="circle-dot"></div>
-      <div>
-        <h3>4. Yellow Cross (OLL Stage 1)</h3>
-        <p>Turn the top into a yellow cross using easy patterns.</p>
-        <button class="pop-btn" onclick="startLesson('yellow-cross')">Yellow Cross Lesson</button>
-      </div>
-    </div>
-    <div class="milestone">
-      <div class="circle-dot"></div>
-      <div>
-        <h3>5. Orient Yellow Face (OLL)</h3>
-        <p>Make the entire top face yellow with 2–3 short algorithms.</p>
-        <button class="pop-btn" onclick="startLesson('oll-beginner')">OLL for Beginners</button>
-      </div>
-    </div>
-    <div class="milestone">
-      <div class="circle-dot"></div>
-      <div>
-        <h3>6. Permute Last Layer (PLL)</h3>
-        <p>Swap the last layer pieces to finish the cube.</p>
-        <button class="pop-btn" onclick="startLesson('pll-beginner')">PLL for Beginners</button>
-      </div>
-    </div>
-    <button class="pop-btn" onclick="goPage('p-formula-roadmap')">◀ Back</button>
-  </div>
-  <div id="p-roadmap-cfop" class="page">
-    <h1>CFOP Track</h1>
-    <p>Follow the milestones in order.</p>
-    <div class="milestone">
-      <div class="circle-dot"></div>
-      <div>
-        <h3>Step 1: Cross</h3>
-        <p>Advanced cross techniques.</p>
-        <button class="pop-btn" onclick="openCrossLesson()">Start Cross</button>
-      </div>
-    </div>
-    <div class="milestone">
-      <div class="circle-dot"></div>
-      <div>
-        <h3>Step 2: F2L Advanced</h3>
-        <p>Full F2L algorithms for speed.</p>
-        <button class="pop-btn" onclick="openAdvancedF2LLesson()">Advanced F2L</button>
-      </div>
-    </div>
-    <div class="milestone">
-      <div class="circle-dot"></div>
-      <div>
-        <h3>Step 3: 2-Look OLL</h3>
-        <p>Two-look orientation algorithms.</p>
-        <button class="pop-btn" onclick="open2LookOLLLesson()">2-Look OLL</button>
-      </div>
-    </div>
-    <div class="milestone">
-      <div class="circle-dot"></div>
-      <div>
-        <h3>Step 4: Full PLL</h3>
-        <p>All PLL cases for speedcubing.</p>
-        <button class="pop-btn" onclick="openFullPLLLesson()">Full PLL</button>
-      </div>
-    </div>
-    <button class="pop-btn" onclick="goPage('p-formula-roadmap')">◀ Back</button>
-  </div>
-  <div id="p-roadmap-creator" class="page">
-    <h1>Creator's Choice</h1>
-    <p>Follow the milestones in order.</p>
-    <div class="milestone">
-      <div class="circle-dot"></div>
-      <div>
-        <h3>Step 1: Custom Alg Builder</h3>
-        <p>Build your own algorithms.</p>
-        <button class="pop-btn" onclick="openAlgBuilderLesson()">Start Alg Builder</button>
-      </div>
-    </div>
-    <div class="milestone">
-      <div class="circle-dot"></div>
-      <div>
-        <h3>Step 2: Drill Mode</h3>
-        <p>Practice custom drills.</p>
-        <button class="pop-btn" onclick="openDrillModeLesson()">Drill Mode</button>
-      </div>
-    </div>
-    <button class="pop-btn" onclick="goPage('p-formula-roadmap')">◀ Back</button>
+  <div id="p-start" class="page active">
+    <h1>CubeZilla Solver</h1>
+    <p>Give the cube any scramble. The solver will undo all moves you make.</p>
+    <button class="pop-btn" onclick="startSolver()">Start</button>
   </div>
 </div>
 <!-- MAIN APP -->
@@ -617,7 +389,6 @@ let zoomDistance = 12;
 const minZoom = 5;
 const maxZoom = 25;
 let cubeOrientation = new THREE.Quaternion();
-
 // --- Move tracking for scramble + solve ---
 let moveHistory = [];
 function recordMoveForHistory(move) {
@@ -627,9 +398,10 @@ function clearMoveHistory() {
   moveHistory = [];
 }
 function getReverseSolution() {
-  return moveHistory.slice().reverse().map(m => m.endsWith("_prime") ? m.replace("_prime", "") : m + "_prime");
+  // R -> R'
+  // R' -> R
+  return moveHistory.slice().reverse().map(m => m.endsWith("_prime") ? m.replace("_prime", "") : m + "_prime" );
 }
-
 const standardViews = {
   front: { cameraPos: [0, 3, 12], cubeRot: [0, 0, 0] },
   right: { cameraPos: [12, 3, 0], cubeRot: [0, -Math.PI / 2, 0] },
@@ -674,58 +446,37 @@ function goPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
 }
-function initInteractiveCube() {
+function startSolver() {
   document.getElementById('overlay').style.display = 'none';
   document.getElementById('main-app').style.display = 'grid';
-  document.getElementById('method-title').innerText = "Interactive Cube";
+  document.getElementById('method-title').innerText = "Cube Solver";
   setup3D();
 }
-function startLesson(id) {
-  document.getElementById('overlay').style.display = 'none';
-  document.getElementById('main-app').style.display = 'grid';
-  let title = '';
-  switch (id) {
-    case 'white-cross': title = 'Lesson: White Cross'; break;
-    case 'white-corners': title = 'Lesson: White Corners'; break;
-    case 'second-layer': title = 'Lesson: Second Layer'; break;
-    case 'yellow-cross': title = 'Lesson: Yellow Cross'; break;
-    case 'oll-beginner': title = 'Lesson: OLL (Beginner)'; break;
-    case 'pll-beginner': title = 'Lesson: PLL (Beginner)'; break;
-  }
-  document.getElementById('method-title').innerText = title;
-  setup3D();
-}
-function playNotationDemo(move) {
-  const vid = document.getElementById(`vid-${move}`);
-  if (vid) {
-    vid.src = `videos/${move}.mp4`;
-    vid.currentTime = 0;
-    vid.play();
-    setTimeout(() => vid.pause(), 1500);
-  }
-  if (!isRotating) {
-    setTimeout(() => screenMove(move), 200);
-  }
-}
+function playDemo() { screenMove('R'); }
 function setup3D() {
   const container = document.getElementById('cube-container');
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(35, container.clientWidth / container.clientHeight, 0.1, 1000);
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setSize(container.clientWidth, container.clientHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   container.appendChild(renderer.domElement);
-  scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-  const dl1 = new THREE.DirectionalLight(0xffffff, 1);
-  dl1.position.set(1, 1, 0.5); scene.add(dl1);
-  const dl2 = new THREE.DirectionalLight(0xffffff, 0.5);
-  dl2.position.set(-1, -1, -0.5); scene.add(dl2);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+  const dl1 = new THREE.DirectionalLight(0xffffff, 0.9);
+  dl1.position.set(3, 6, 4);
+  dl1.castShadow = true;
+  scene.add(dl1);
+  const dl2 = new THREE.DirectionalLight(0xffffff, 0.4);
+  dl2.position.set(-4, -3, -5);
+  scene.add(dl2);
   scene.add(cubeGroup);
   const colors = [0xff0000, 0xffa500, 0xffffff, 0xffff00, 0x00ff00, 0x0000ff];
   for (let x = -1; x <= 1; x++) {
     for (let y = -1; y <= 1; y++) {
       for (let z = -1; z <= 1; z++) {
         if (x === 0 && y === 0 && z === 0) continue;
-        const materials = colors.map(c => new THREE.MeshLambertMaterial({ color: c }));
+        const materials = colors.map(c => new THREE.MeshStandardMaterial({ color: c, metalness: 0.1, roughness: 0.5 }));
         const cubie = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.95, 0.95), materials);
         cubie.position.set(x, y, z);
         cubies.push(cubie);
@@ -751,7 +502,6 @@ function snapAndReorient(targetFace) {
   const view = standardViews[targetFace];
   if (!view) return;
   isChangingView = true;
-  // smooth camera animation
   gsap.to(camera.position, {
     x: view.cameraPos[0],
     y: view.cameraPos[1],
@@ -760,7 +510,6 @@ function snapAndReorient(targetFace) {
     ease: "power2.inOut",
     onUpdate: () => camera.lookAt(0, 0, 0)
   });
-  // animate cube rotation as a single tween
   const start = { x: cubeGroup.rotation.x, y: cubeGroup.rotation.y, z: cubeGroup.rotation.z };
   const end = { x: view.cubeRot[0], y: view.cubeRot[1], z: view.cubeRot[2] };
   const anim = { ...start };
@@ -776,7 +525,6 @@ function snapAndReorient(targetFace) {
       cubeGroup.rotation.z = anim.z;
     },
     onComplete: () => {
-      // hard-set final rotation to avoid drift
       cubeGroup.rotation.set(end.x, end.y, end.z);
       cubeGroup.updateMatrixWorld(true);
       cubeOrientation.copy(cubeGroup.quaternion);
@@ -811,12 +559,12 @@ function handleMove(axis, layerSign, prime) {
   if (isRotating || isChangingView) return;
   isRotating = true;
   const pivot = new THREE.Group();
-  scene.add(pivot);
+  cubeGroup.add(pivot);
   const movingCubies = [];
   cubies.forEach(cubie => {
-    const localPos = cubie.position.clone();
+    const p = cubie.position;
     const threshold = 0.1;
-    if (Math.abs(localPos[axis] - layerSign) < threshold) {
+    if (Math.abs(p[axis] - layerSign) < threshold) {
       pivot.attach(cubie);
       movingCubies.push(cubie);
     }
@@ -862,10 +610,10 @@ function animate() {
 }
 function playDemo() { screenMove('R'); }
 function scramble() {
-  clearMoveHistory();
+  clearMoveHistory(); // reset history for a fresh solve
   let count = 0;
   const moves = ['R','R_prime','L','L_prime','F','F_prime','B','B_prime','U','U_prime','D','D_prime'];
-  const maxMoves = Math.floor(Math.random() * 5) + 15;
+  const maxMoves = Math.floor(Math.random() * 5) + 15; // 15–19 moves
   const interval = setInterval(() => {
     if (isRotating) return;
     if (count >= maxMoves) {
@@ -873,7 +621,7 @@ function scramble() {
       return;
     }
     const m = moves[Math.floor(Math.random() * moves.length)];
-    screenMove(m);
+    screenMove(m); // this will also record to history
     count++;
   }, 250);
 }
@@ -885,8 +633,8 @@ function solveCube() {
     setTimeout(() => { sidebarTitle.innerText = originalTitle; }, 1500);
     return;
   }
-  // Phase 1: fake analysis
-  sidebarTitle.innerText = 'Analyzing scramble...';
+  if (isRotating || isChangingView) return;
+  sidebarTitle.innerText = `Analyzing (${moveHistory.length} moves)...`;
   setTimeout(() => {
     sidebarTitle.innerText = 'Computing solution...';
     setTimeout(() => {
@@ -894,7 +642,7 @@ function solveCube() {
       let idx = 0;
       sidebarTitle.innerText = `Solving (${solution.length}/${solution.length})...`;
       const interval = setInterval(() => {
-        if (isRotating) return;
+        if (isRotating || isChangingView) return;
         if (idx >= solution.length) {
           clearInterval(interval);
           clearMoveHistory();
@@ -904,15 +652,15 @@ function solveCube() {
         }
         const remaining = solution.length - idx;
         sidebarTitle.innerText = `Solving (${remaining}/${solution.length})...`;
+        // execute without double-recording
         const moveFull = solution[idx];
         let prime = false;
-        let base = moveFull;
         if (moveFull.endsWith('_prime')) {
           prime = true;
-          base = moveFull.replace('_prime', '');
+          moveFull = moveFull.replace('_prime', '');
         }
         let screenDir;
-        switch (base) {
+        switch (moveFull) {
           case 'R': screenDir = 'right'; break;
           case 'L': screenDir = 'left'; break;
           case 'U': screenDir = 'up'; break;
@@ -923,6 +671,7 @@ function solveCube() {
         }
         const mapping = getCubeAxisForScreenDirection(screenDir);
         if (mapping) {
+          // IMPORTANT: do not call recordMoveForHistory here
           handleMove(mapping.axisName, mapping.layerSign, prime);
         }
         idx++;
