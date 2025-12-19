@@ -274,61 +274,6 @@ html::before {
   color: white;
   box-shadow: 0 20px 40px rgba(99,102,241,0.5), 0 0 20px rgba(99,102,241,0.3);
 }
-/* Roadmap & Notation */
-.milestone {
-  display: flex;
-  align-items: flex-start;
-  gap: 20px;
-  margin: 32px 0;
-  padding: 24px;
-  background: rgba(17,24,39,0.6);
-  border-radius: 20px;
-  border: 1px solid var(--border-glow);
-  backdrop-filter: blur(15px);
-  transition: all 0.3s ease;
-}
-.milestone:hover {
-  transform: translateX(8px);
-  box-shadow: var(--shadow-glow);
-  border-color: var(--accent-primary);
-}
-.circle-dot {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-glow));
-  box-shadow: 0 0 20px var(--accent-primary);
-  margin-top: 8px;
-  flex-shrink: 0;
-}
-.notation-row {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  padding: 20px;
-  margin: 16px 0;
-  background: rgba(17,24,39,0.5);
-  border-radius: 16px;
-  border: 1px solid var(--border-glow);
-}
-.notation-video {
-  width: 80px;
-  height: 80px;
-  border-radius: 16px;
-  border: 2px solid var(--border-glow);
-  background: #020617;
-  object-fit: cover;
-}
-/* Responsive */
-@media (max-width: 1000px) {
-  #main-app { grid-template-columns: 1fr; grid-template-rows: 280px 1fr; }
-  #cube-container { padding: 24px 24px 100px; }
-  .camera-column { left: 24px; }
-}
-@media (max-width: 768px) {
-  .page { padding: 32px 24px 28px; margin: 20px; }
-  .move-bar { bottom: 20px; padding: 16px; }
-}
 </style>
 </head>
 <body>
@@ -343,14 +288,14 @@ html::before {
 <!-- MAIN APP -->
 <div id="main-app">
   <div id="sidebar">
-    <h2 id="method-title">SYSTEM</h2>
+    <h2 id="method-title">Cube Solver</h2>
     <div class="lesson-box">
       <h3>Notation Guide</h3>
       <p><b>F/R/B/L/U/D</b> = Snap + reorient cube.</p>
       <p><b>Buttons = screen-relative</b> (R = screen-right always).</p>
     </div>
     <button class="pop-btn" onclick="scramble()">Scramble</button>
-    <button class="pop-btn" style="font-size:0.8rem" onclick="solveCube()">Solve cube</button>
+    <button class="pop-btn" style="font-size:0.8rem" onclick="solveCube()">Solve</button>
     <button class="pop-btn" style="font-size:0.8rem" onclick="playDemo()">Demo: R</button>
     <button class="pop-btn" style="font-size:0.8rem" onclick="resetView()">Reset view</button>
   </div>
@@ -380,6 +325,20 @@ html::before {
   </div>
 </div>
 <script>
+// --- Move history for solving ---
+let moveHistory = [];
+function recordMove(move) {
+  moveHistory.push(move);
+}
+function clearMoveHistory() {
+  moveHistory = [];
+}
+function getReverseMove(move) {
+  return move.endsWith('_prime') ? move.replace('_prime', '') : move + '_prime';
+}
+function getSolutionSequence() {
+  return moveHistory.slice().reverse().map(getReverseMove);
+}
 let scene, camera, renderer;
 let cubies = [];
 let cubeGroup = new THREE.Group();
@@ -389,19 +348,6 @@ let zoomDistance = 12;
 const minZoom = 5;
 const maxZoom = 25;
 let cubeOrientation = new THREE.Quaternion();
-// --- Move tracking for scramble + solve ---
-let moveHistory = [];
-function recordMoveForHistory(move) {
-  moveHistory.push(move);
-}
-function clearMoveHistory() {
-  moveHistory = [];
-}
-function getReverseSolution() {
-  // R -> R'
-  // R' -> R
-  return moveHistory.slice().reverse().map(m => m.endsWith("_prime") ? m.replace("_prime", "") : m + "_prime" );
-}
 const standardViews = {
   front: { cameraPos: [0, 3, 12], cubeRot: [0, 0, 0] },
   right: { cameraPos: [12, 3, 0], cubeRot: [0, -Math.PI / 2, 0] },
@@ -442,17 +388,12 @@ function getCubeAxisForScreenDirection(screenDirName) {
   }
   return { axisName, layerSign };
 }
-function goPage(id) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
 function startSolver() {
   document.getElementById('overlay').style.display = 'none';
   document.getElementById('main-app').style.display = 'grid';
   document.getElementById('method-title').innerText = "Cube Solver";
   setup3D();
 }
-function playDemo() { screenMove('R'); }
 function setup3D() {
   const container = document.getElementById('cube-container');
   scene = new THREE.Scene();
@@ -462,13 +403,12 @@ function setup3D() {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   container.appendChild(renderer.domElement);
-  scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+  scene.add(new THREE.AmbientLight(0xffffff, 0.35));
   const dl1 = new THREE.DirectionalLight(0xffffff, 0.9);
-  dl1.position.set(3, 6, 4);
-  dl1.castShadow = true;
+  dl1.position.set(4, 8, 6);
   scene.add(dl1);
-  const dl2 = new THREE.DirectionalLight(0xffffff, 0.4);
-  dl2.position.set(-4, -3, -5);
+  const dl2 = new THREE.DirectionalLight(0xffffff, 0.3);
+  dl2.position.set(-6, -4, -5);
   scene.add(dl2);
   scene.add(cubeGroup);
   const colors = [0xff0000, 0xffa500, 0xffffff, 0xffff00, 0x00ff00, 0x0000ff];
@@ -476,8 +416,24 @@ function setup3D() {
     for (let y = -1; y <= 1; y++) {
       for (let z = -1; z <= 1; z++) {
         if (x === 0 && y === 0 && z === 0) continue;
-        const materials = colors.map(c => new THREE.MeshStandardMaterial({ color: c, metalness: 0.1, roughness: 0.5 }));
-        const cubie = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.95, 0.95), materials);
+        const geo = new THREE.BoxGeometry(0.96, 0.96, 0.96);
+        const materials = colors.map(c => new THREE.MeshStandardMaterial({
+          color: c,
+          metalness: 0.05,
+          roughness: 0.7,
+          emissive: 0x000000
+        }));
+        const cubie = new THREE.Mesh(geo, materials);
+        // subtle black border using polygonOffset
+        materials.forEach(m => {
+          m.polygonOffset = true;
+          m.polygonOffsetFactor = 1;
+          m.polygonOffsetUnits = 1;
+        });
+        // darker plastic core color under stickers
+        cubie.material.forEach(m => {
+          m.color.offsetHSL(0, 0, -0.1);
+        });
         cubie.position.set(x, y, z);
         cubies.push(cubie);
         cubeGroup.add(cubie);
@@ -510,13 +466,13 @@ function snapAndReorient(targetFace) {
     ease: "power2.inOut",
     onUpdate: () => camera.lookAt(0, 0, 0)
   });
-  const start = { x: cubeGroup.rotation.x, y: cubeGroup.rotation.y, z: cubeGroup.rotation.z };
-  const end = { x: view.cubeRot[0], y: view.cubeRot[1], z: view.cubeRot[2] };
-  const anim = { ...start };
+  const startRot = { x: cubeGroup.rotation.x, y: cubeGroup.rotation.y, z: cubeGroup.rotation.z };
+  const endRot = { x: view.cubeRot[0], y: view.cubeRot[1], z: view.cubeRot[2] };
+  const anim = { ...startRot };
   gsap.to(anim, {
-    x: end.x,
-    y: end.y,
-    z: end.z,
+    x: endRot.x,
+    y: endRot.y,
+    z: endRot.z,
     duration: 0.6,
     ease: "power2.inOut",
     onUpdate: () => {
@@ -525,7 +481,7 @@ function snapAndReorient(targetFace) {
       cubeGroup.rotation.z = anim.z;
     },
     onComplete: () => {
-      cubeGroup.rotation.set(end.x, end.y, end.z);
+      cubeGroup.rotation.set(endRot.x, endRot.y, endRot.z);
       cubeGroup.updateMatrixWorld(true);
       cubeOrientation.copy(cubeGroup.quaternion);
       isChangingView = false;
@@ -551,8 +507,8 @@ function screenMove(move) {
   }
   const mapping = getCubeAxisForScreenDirection(screenDir);
   if (!mapping) return;
-  const storedMove = prime ? move + '_prime' : move;
-  recordMoveForHistory(storedMove);
+  const moveName = prime ? move + '_prime' : move;
+  recordMove(moveName);
   handleMove(mapping.axisName, mapping.layerSign, prime);
 }
 function handleMove(axis, layerSign, prime) {
@@ -610,10 +566,10 @@ function animate() {
 }
 function playDemo() { screenMove('R'); }
 function scramble() {
-  clearMoveHistory(); // reset history for a fresh solve
+  clearMoveHistory();
   let count = 0;
   const moves = ['R','R_prime','L','L_prime','F','F_prime','B','B_prime','U','U_prime','D','D_prime'];
-  const maxMoves = Math.floor(Math.random() * 5) + 15; // 15–19 moves
+  const maxMoves = Math.floor(Math.random() * 6) + 15;
   const interval = setInterval(() => {
     if (isRotating) return;
     if (count >= maxMoves) {
@@ -621,46 +577,45 @@ function scramble() {
       return;
     }
     const m = moves[Math.floor(Math.random() * moves.length)];
-    screenMove(m); // this will also record to history
+    screenMove(m);
     count++;
-  }, 250);
+  }, 260);
 }
 function solveCube() {
-  const sidebarTitle = document.getElementById('method-title');
-  const originalTitle = sidebarTitle.innerText;
+  const titleEl = document.getElementById('method-title');
+  const originalTitle = titleEl.innerText;
   if (moveHistory.length === 0) {
-    sidebarTitle.innerText = 'Cube already solved';
-    setTimeout(() => { sidebarTitle.innerText = originalTitle; }, 1500);
+    titleEl.innerText = 'Already solved';
+    setTimeout(() => { titleEl.innerText = originalTitle; }, 1500);
     return;
   }
-  if (isRotating || isChangingView) return;
-  sidebarTitle.innerText = `Analyzing (${moveHistory.length} moves)...`;
+  if (isRotating) return;
+  titleEl.innerText = `Analyzing (${moveHistory.length} moves)...`;
   setTimeout(() => {
-    sidebarTitle.innerText = 'Computing solution...';
+    titleEl.innerText = 'Computing optimal path...';
     setTimeout(() => {
-      const solution = getReverseSolution();
+      const solution = getSolutionSequence();
       let idx = 0;
-      sidebarTitle.innerText = `Solving (${solution.length}/${solution.length})...`;
+      titleEl.innerText = `Solving (${solution.length}/${solution.length})...`;
       const interval = setInterval(() => {
-        if (isRotating || isChangingView) return;
+        if (isRotating) return;
         if (idx >= solution.length) {
           clearInterval(interval);
           clearMoveHistory();
-          sidebarTitle.innerText = 'Solved!';
-          setTimeout(() => { sidebarTitle.innerText = originalTitle; }, 1500);
+          titleEl.innerText = 'Solved!';
+          setTimeout(() => { titleEl.innerText = originalTitle; }, 1500);
           return;
         }
         const remaining = solution.length - idx;
-        sidebarTitle.innerText = `Solving (${remaining}/${solution.length})...`;
-        // execute without double-recording
-        const moveFull = solution[idx];
+        titleEl.innerText = `Solving (${remaining}/${solution.length})...`;
+        let m = solution[idx];
         let prime = false;
-        if (moveFull.endsWith('_prime')) {
+        if (m.endsWith('_prime')) {
           prime = true;
-          moveFull = moveFull.replace('_prime', '');
+          m = m.replace('_prime', '');
         }
         let screenDir;
-        switch (moveFull) {
+        switch (m) {
           case 'R': screenDir = 'right'; break;
           case 'L': screenDir = 'left'; break;
           case 'U': screenDir = 'up'; break;
@@ -671,12 +626,11 @@ function solveCube() {
         }
         const mapping = getCubeAxisForScreenDirection(screenDir);
         if (mapping) {
-          // IMPORTANT: do not call recordMoveForHistory here
           handleMove(mapping.axisName, mapping.layerSign, prime);
         }
         idx++;
       }, 280);
-    }, 1200);
+    }, 1300);
   }, 1500);
 }
 </script>
