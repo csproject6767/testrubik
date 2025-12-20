@@ -578,10 +578,20 @@ function handleMove(axis, layerSign, prime) {
 function scramble() {
   let count = 0;
   const moves = ['R','R_prime','L','L_prime','U','U_prime','F','F_prime'];
+  let lastFace = null;
   const interval = setInterval(() => {
     if (isRotating || isChangingView) return;
     if (count >= 15) { clearInterval(interval); return; }
-    screenMove(moves[Math.floor(Math.random() * moves.length)]);
+    let move;
+    while (true) {
+      move = moves[Math.floor(Math.random() * moves.length)];
+      const face = move[0];
+      if (face !== lastFace) {
+        lastFace = face;
+        break;
+      }
+    }
+    screenMove(move);
     count++;
   }, 260);
 }
@@ -589,7 +599,8 @@ function solveCube() {
   if (moveHistory.length === 0) return;
   const titleEl = document.getElementById('method-title');
   const originalTitle = titleEl.innerText;
-  const reverseMoves = moveHistory.slice().reverse().map(m => m.endsWith('_prime') ? m.replace('_prime','') : m + '_prime');
+  let reverseMoves = moveHistory.slice().reverse().map(m => m.endsWith('_prime') ? m.replace('_prime','') : m + '_prime');
+  reverseMoves = normalizeMoves(reverseMoves);
   titleEl.innerText = 'Analyzing scramble...';
   setSolveInfo(pickRandom(solveMessages.scan));
   setTimeout(() => {
@@ -619,6 +630,35 @@ function solveCube() {
       }, 900);
     }, 1100);
   }, 1100);
+}
+function normalizeMoves(moves) {
+  const result = [];
+  let i = 0;
+  while (i < moves.length) {
+    const m = moves[i];
+    const face = m[0];
+    const prime = m.endsWith("'");
+    let count = 1;
+    let j = i + 1;
+    while (j < moves.length && moves[j][0] === face && moves[j].endsWith("'") === prime) {
+      count++;
+      j++;
+    }
+    const mod = count % 4;
+    if (mod === 0) {
+      // cancels out
+    } else if (mod === 1) {
+      result.push(face + (prime ? "'" : ""));
+    } else if (mod === 2) {
+      // double turn - keep as two moves since we don't have "2"
+      result.push(face + (prime ? "'" : ""));
+      result.push(face + (prime ? "'" : ""));
+    } else if (mod === 3) {
+      result.push(face + (prime ? "" : "'"));
+    }
+    i = j;
+  }
+  return result;
 }
 function resetCube() { location.reload(); }
 function resetView() { snapAndReorient('front'); }
