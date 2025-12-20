@@ -6,6 +6,8 @@
 <title>CubeZilla Solver</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+<!-- cubejs solver library (Kociemba two-phase) -->
+<script src="https://cdn.jsdelivr.net/npm/cubejs@0.0.13/dist/cube.min.js"></script>
 <style>
 :root {
   --bg-main: #020617;
@@ -274,6 +276,9 @@ body {
   </div>
 </div>
 <script>
+// Initialize Kociemba solver tables on load
+Cube.initSolver();
+
 let scene, camera, renderer, cubies = [], cubeGroup;
 let moveHistory = [];
 let inputCubeGroup, inputCubies = [];
@@ -369,9 +374,49 @@ function exitPaintMode() {
 function selectPaintColor(face) {
   currentPaintColor = paintColors[face];
 }
+function buildStickerString() {
+  // Simple stub - returns a solved cube string for testing
+  // Replace with real reading of inputCubies colors when ready
+  return 'UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB';
+}
+function playSolutionOnMainCube(moves) {
+  cubeGroup.visible = true;
+  inputCubeGroup.visible = false;
+  let idx = 0;
+  const total = moves.length;
+  const titleEl = document.getElementById('method-title');
+  titleEl.innerText = 'Applying solution...';
+  setSolveInfo(pickRandom(solveMessages.execute));
+  const interval = setInterval(() => {
+    if (isRotating || isChangingView) return;
+    if (idx >= total) {
+      clearInterval(interval);
+      titleEl.innerText = 'Solved!';
+      setSolveInfo('Ready for another scramble');
+      setTimeout(() => { titleEl.innerText = 'CONTROLS'; setSolveInfo(''); }, 2000);
+      return;
+    }
+    titleEl.innerText = `Solving (${total - idx}/${total})...`;
+    let move = moves[idx];
+    if (move.endsWith("'")) {
+      screenMove(move[0] + '_prime');
+    } else {
+      screenMove(move);
+    }
+    idx++;
+  }, 320);
+}
 function startSolvingPaintedCube() {
-  alert('Painted cube ready – now plug in solver logic here.');
-  exitPaintMode();
+  const stickerString = buildStickerString();
+  try {
+    const solution = Cube.solve(stickerString);
+    const rawMoves = solution.trim().split(/\s+/);
+    const niceMoves = normalizeMoves(rawMoves);
+    playSolutionOnMainCube(niceMoves);
+    exitPaintMode();
+  } catch (e) {
+    alert('Invalid cube state – please check your coloring.');
+  }
 }
 function lockInputCubeCenters() {
   inputCubies.forEach(c => {
@@ -391,12 +436,12 @@ function lockInputCubeCenters() {
     else if (z === -1) faceLetter = 'B';
     const color = paintColors[faceLetter];
     let matIndex = 0;
-    if (faceLetter === 'R') matIndex = 0; // +X
-    else if (faceLetter === 'L') matIndex = 1; // -X
-    else if (faceLetter === 'U') matIndex = 2; // +Y
-    else if (faceLetter === 'D') matIndex = 3; // -Y
-    else if (faceLetter === 'F') matIndex = 4; // +Z
-    else if (faceLetter === 'B') matIndex = 5; // -Z
+    if (faceLetter === 'R') matIndex = 0;
+    else if (faceLetter === 'L') matIndex = 1;
+    else if (faceLetter === 'U') matIndex = 2;
+    else if (faceLetter === 'D') matIndex = 3;
+    else if (faceLetter === 'F') matIndex = 4;
+    else if (faceLetter === 'B') matIndex = 5;
     c.material[matIndex].color.set(color);
   });
 }
@@ -624,7 +669,12 @@ function solveCube() {
             return;
           }
           titleEl.innerText = `Solving (${total - idx}/${total})...`;
-          screenMove(reverseMoves[idx]);
+          let move = reverseMoves[idx];
+          if (move.endsWith("'")) {
+            screenMove(move[0] + '_prime');
+          } else {
+            screenMove(move);
+          }
           idx++;
         }, 320);
       }, 900);
@@ -650,7 +700,6 @@ function normalizeMoves(moves) {
     } else if (mod === 1) {
       result.push(face + (prime ? "'" : ""));
     } else if (mod === 2) {
-      // double turn - keep as two moves since we don't have "2"
       result.push(face + (prime ? "'" : ""));
       result.push(face + (prime ? "'" : ""));
     } else if (mod === 3) {
