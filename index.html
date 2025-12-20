@@ -398,7 +398,6 @@ function lockInputCubeCenters() {
     else if (faceLetter === 'F') matIndex = 4; // +Z
     else if (faceLetter === 'B') matIndex = 5; // -Z
     c.material[matIndex].color.set(color);
-    c.material[matIndex].userData.lockedCenter = true;
   });
 }
 const raycaster = new THREE.Raycaster();
@@ -416,7 +415,6 @@ function onPointerDown(event) {
   const faceIndex = Math.floor(hit.faceIndex / 2);
   const mat = mesh.material[faceIndex];
   if (!mat) return;
-  if (mat.userData.lockedCenter) return;
   mat.color.set(currentPaintColor);
 }
 function setup3D() {
