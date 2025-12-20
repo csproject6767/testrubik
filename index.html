@@ -6,8 +6,6 @@
 <title>CubeZilla Solver</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
-<!-- cubejs solver library (Kociemba two-phase) -->
-<script src="https://cdn.jsdelivr.net/npm/cubejs@0.0.13/dist/cube.min.js"></script>
 <style>
 :root {
   --bg-main: #020617;
@@ -214,6 +212,9 @@ body {
       Learn how a solver “thinks” through CFOP-style phases while you experiment with your own scrambles.
     </p>
     <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:26px;">
+      <button class="pop-btn" onclick="startSolver()">
+        ▶ Solve a scramble
+      </button>
       <button class="pop-btn" style="background:linear-gradient(135deg,#0f172a,#111827); box-shadow:none; border:1px solid rgba(148,163,184,0.5); color:#e5e7eb;"
               onclick="showHowItWorks()">
         ? How does the app work?
@@ -259,23 +260,18 @@ body {
       <button class="move-btn" onclick="screenMove('F')">F</button>
       <button class="move-btn" onclick="screenMove('F_prime')">F'</button>
     </div>
-    <div id="paint-palette" style="position:absolute; bottom:90px; right:40px; display:none; flex-direction:column; gap:10px; align-items:center; pointer-events:auto; z-index:100;">
-      <div style="display:flex; gap:8px;">
-        <div onclick="selectPaintColor('U')" style="width:24px;height:24px;border-radius:50%;background:#ffffff;border:2px solid #e5e7eb;cursor:pointer;"></div>
-        <div onclick="selectPaintColor('D')" style="width:24px;height:24px;border-radius:50%;background:#facc15;cursor:pointer;"></div>
-        <div onclick="selectPaintColor('R')" style="width:24px;height:24px;border-radius:50%;background:#ef4444;cursor:pointer;"></div>
-        <div onclick="selectPaintColor('L')" style="width:24px;height:24px;border-radius:50%;background:#f97316;cursor:pointer;"></div>
-        <div onclick="selectPaintColor('F')" style="width:24px;height:24px;border-radius:50%;background:#22c55e;cursor:pointer;"></div>
-        <div onclick="selectPaintColor('B')" style="width:24px;height:24px;border-radius:50%;background:#3b82f6;cursor:pointer;"></div>
-      </div>
-      <button class="pop-btn" style="padding:8px 18px;font-size:0.8rem;" onclick="startSolvingPaintedCube()">Start solving</button>
+    <div id="paint-palette" style="position:absolute; bottom:90px; right:40px; display:none; gap:10px; align-items:center;">
+      <div onclick="selectPaintColor('U')" style="width:24px;height:24px;border-radius:50%;background:#ffffff;border:2px solid #e5e7eb;cursor:pointer;"></div>
+      <div onclick="selectPaintColor('D')" style="width:24px;height:24px;border-radius:50%;background:#facc15;cursor:pointer;"></div>
+      <div onclick="selectPaintColor('R')" style="width:24px;height:24px;border-radius:50%;background:#ef4444;cursor:pointer;"></div>
+      <div onclick="selectPaintColor('L')" style="width:24px;height:24px;border-radius:50%;background:#f97316;cursor:pointer;"></div>
+      <div onclick="selectPaintColor('F')" style="width:24px;height:24px;border-radius:50%;background:#22c55e;cursor:pointer;"></div>
+      <div onclick="selectPaintColor('B')" style="width:24px;height:24px;border-radius:50%;background:#3b82f6;cursor:pointer;"></div>
+      <button class="pop-btn" style="padding:8px 18px;font-size:0.8rem;margin-left:8px;" onclick="startSolvingPaintedCube()"> Start solving </button>
     </div>
   </div>
 </div>
 <script>
-// Initialize Kociemba solver tables on load
-Cube.initSolver();
-
 let scene, camera, renderer, cubies = [], cubeGroup;
 let moveHistory = [];
 let inputCubeGroup, inputCubies = [];
@@ -287,11 +283,11 @@ const paintColors = {
   R: 0xff0000, // red
   L: 0xffa500, // orange
   F: 0x00ff00, // green
-  B: 0x0000ff  // blue
+  B: 0x0000ff // blue
 };
 let isRotating = false, isChangingView = false;
 let currentView = { theta: 0, phi: 0.3 };
-const zoomDistance = 10;
+const zoomDistance = 12;
 // --- Solve commentary + helpers ---
 const solveMessages = {
   scan: [
@@ -353,100 +349,24 @@ function startSolver() {
   setup3D();
 }
 function startPaintMode() {
+  // ensure main scene exists
   if (!scene) {
-    startSolver();
+    startSolver(); // reuses your setup3D
   }
   paintMode = true;
-  if (cubeGroup) cubeGroup.visible = false;
-  if (inputCubeGroup) {
-    inputCubeGroup.visible = true;
-    inputCubeGroup.position.set(2.0, 0, 0);
-  }
-  snapAndReorient('front');
-  const palette = document.getElementById('paint-palette');
-  if (palette) palette.style.display = 'flex';
+  document.getElementById('paint-palette').style.display = 'flex';
 }
 function exitPaintMode() {
   paintMode = false;
-  if (cubeGroup) cubeGroup.visible = true;
-  if (inputCubeGroup) inputCubeGroup.visible = false;
-  const palette = document.getElementById('paint-palette');
-  if (palette) palette.style.display = 'none';
+  document.getElementById('paint-palette').style.display = 'none';
 }
 function selectPaintColor(face) {
   currentPaintColor = paintColors[face];
 }
-function buildStickerString() {
-  return 'UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB';
-}
-function applyPaintToMainCube() {
-}
-function playSolutionOnMainCube(moves) {
-  cubeGroup.visible = true;
-  inputCubeGroup.visible = false;
-  let idx = 0;
-  const total = moves.length;
-  const titleEl = document.getElementById('method-title');
-  titleEl.innerText = 'Applying solution...';
-  setSolveInfo(pickRandom(solveMessages.execute));
-  const interval = setInterval(() => {
-    if (isRotating || isChangingView) return;
-    if (idx >= total) {
-      clearInterval(interval);
-      titleEl.innerText = 'Solved!';
-      setSolveInfo('Ready for another scramble');
-      setTimeout(() => { titleEl.innerText = 'CONTROLS'; setSolveInfo(''); }, 2000);
-      return;
-    }
-    titleEl.innerText = `Solving (${total - idx}/${total})...`;
-    let move = moves[idx];
-    if (move.endsWith("'")) {
-      screenMove(move[0] + '_prime');
-    } else {
-      screenMove(move);
-    }
-    idx++;
-  }, 320);
-}
 function startSolvingPaintedCube() {
-  const stickerString = buildStickerString();
-  try {
-    const solution = Cube.solve(stickerString);
-    const rawMoves = solution.trim().split(/\s+/);
-    const niceMoves = normalizeMoves(rawMoves);
-    applyPaintToMainCube();
-    playSolutionOnMainCube(niceMoves);
-    exitPaintMode();
-  } catch (e) {
-    alert('Invalid cube state – please check your coloring.');
-  }
-}
-function lockInputCubeCenters() {
-  inputCubies.forEach(c => {
-    const x = Math.round(c.position.x);
-    const y = Math.round(c.position.y);
-    const z = Math.round(c.position.z);
-    const isCenter = ((Math.abs(x) === 1 && y === 0 && z === 0) ||
-                      (Math.abs(y) === 1 && x === 0 && z === 0) ||
-                      (Math.abs(z) === 1 && x === 0 && y === 0));
-    if (!isCenter) return;
-    let faceLetter;
-    if (x === 1) faceLetter = 'R';
-    else if (x === -1) faceLetter = 'L';
-    else if (y === 1) faceLetter = 'U';
-    else if (y === -1) faceLetter = 'D';
-    else if (z === 1) faceLetter = 'F';
-    else if (z === -1) faceLetter = 'B';
-    const color = paintColors[faceLetter];
-    let matIndex = 0;
-    if (faceLetter === 'R') matIndex = 0;
-    else if (faceLetter === 'L') matIndex = 1;
-    else if (faceLetter === 'U') matIndex = 2;
-    else if (faceLetter === 'D') matIndex = 3;
-    else if (faceLetter === 'F') matIndex = 4;
-    else if (faceLetter === 'B') matIndex = 5;
-    c.material[matIndex].color.set(color);
-  });
+  // TODO: read painted state, build sticker string, call solver
+  alert('Painted cube ready – now plug in solver logic here.');
+  exitPaintMode();
 }
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
@@ -460,7 +380,7 @@ function onPointerDown(event) {
   if (intersects.length === 0) return;
   const hit = intersects[0];
   const mesh = hit.object;
-  const faceIndex = Math.floor(hit.faceIndex / 2);
+  const faceIndex = Math.floor(hit.faceIndex / 2); // 2 triangles per face
   const mat = mesh.material[faceIndex];
   if (!mat) return;
   mat.color.set(currentPaintColor);
@@ -505,21 +425,20 @@ function setup3D() {
           new THREE.BoxGeometry(0.95, 0.95, 0.95),
           grayMats
         );
-        ic.position.set(x, y, z);
+        ic.position.set(x * 1.4, y * 1.4, z * 1.4); // spread out a bit
         inputCubies.push(ic);
         inputCubeGroup.add(ic);
       }
     }
   }
-  inputCubeGroup.position.set(2.0, 0, 0);
-  inputCubeGroup.visible = false;
-  lockInputCubeCenters();
+  // move painted cube to the left so it doesn’t overlap main cube
+  inputCubeGroup.position.set(-5, 0, 0);
   camera.position.set(
     zoomDistance * Math.cos(currentView.phi) * Math.sin(currentView.theta),
     zoomDistance * Math.sin(currentView.phi),
     zoomDistance * Math.cos(currentView.phi) * Math.cos(currentView.theta)
   );
-  camera.lookAt(0.8, 0, 0);
+  camera.lookAt(0, 0, 0);
   renderer.domElement.addEventListener('pointerdown', onPointerDown);
   animate();
 }
@@ -543,7 +462,7 @@ function snapAndReorient(targetFace) {
         zoomDistance * Math.sin(currentView.phi),
         zoomDistance * Math.cos(currentView.phi) * Math.cos(currentView.theta)
       );
-      camera.lookAt(0.8, 0, 0);
+      camera.lookAt(0, 0, 0);
     },
     onComplete: () => { isChangingView = false; }
   });
@@ -560,40 +479,16 @@ function screenMove(move) {
     case 'F': screenDir = 'front'; break;
     case 'B': screenDir = 'back'; break;
   }
-  // --- compute camera basis vectors in world space ---
-  camera.updateMatrixWorld(true);
-  const m = camera.matrixWorld.elements;
-  const camRight = new THREE.Vector3(m[0], m[1], m[2]).normalize();
-  const camUp = new THREE.Vector3(m[4], m[5], m[6]).normalize();
-  const camForward = new THREE.Vector3(m[8], m[9], m[10]).normalize().negate();
-  // pick the desired direction relative to the *screen*
-  let worldDir = new THREE.Vector3();
+  let axis operandName, layerSign;
+  // fixed cube axes:
+  // x: right/left, y: up/down, z: front/back
   switch (screenDir) {
-    case 'right': worldDir.copy(camRight); break;
-    case 'left': worldDir.copy(camRight).negate(); break;
-    case 'up': worldDir.copy(camUp); break;
-    case 'down': worldDir.copy(camUp).negate(); break;
-    case 'front': worldDir.copy(camForward); break;
-    case 'back': worldDir.copy(camForward).negate(); break;
-  }
-  // project that onto the cube's fixed axes (x,y,z)
-  const xAxis = new THREE.Vector3(1,0,0);
-  const yAxis = new THREE.Vector3(0,1,0);
-  const zAxis = new THREE.Vector3(0,0,1);
-  const dotX = worldDir.dot(xAxis);
-  const dotY = worldDir.dot(yAxis);
-  const dotZ = worldDir.dot(zAxis);
-  const ax = Math.abs(dotX), ay = Math.abs(dotY), az = Math.abs(dotZ);
-  let axisName, layerSign;
-  if (ax >= ay && ax >= az) {
-    axisName = 'x';
-    layerSign = dotX > 0 ? 1 : -1;
-  } else if (ay >= ax && ay >= az) {
-    axisName = 'y';
-    layerSign = dotY > 0 ? 1 : -1;
-  } else {
-    axisName = 'z';
-    layerSign = dotZ > 0 ? 1 : -1;
+    case 'right': axisName = 'x'; layerSign = 1; break; // R
+    case 'left': axisName = 'x'; layerSign = -1; break; // L
+    case 'up': axisName = 'y'; layerSign = 1; break; // U
+    case 'down': axisName = 'y'; layerSign = -1; break; // D
+    case 'front': axisName = 'z'; layerSign = 1; break; // F
+    case 'back': axisName = 'z'; layerSign = -1; break; // B
   }
   moveHistory.push(move);
   handleMove(axisName, layerSign, prime);
@@ -626,20 +521,10 @@ function handleMove(axis, layerSign, prime) {
 function scramble() {
   let count = 0;
   const moves = ['R','R_prime','L','L_prime','U','U_prime','F','F_prime'];
-  let lastFace = null;
   const interval = setInterval(() => {
     if (isRotating || isChangingView) return;
     if (count >= 15) { clearInterval(interval); return; }
-    let move;
-    while (true) {
-      move = moves[Math.floor(Math.random() * moves.length)];
-      const face = move[0];
-      if (face !== lastFace) {
-        lastFace = face;
-        break;
-      }
-    }
-    screenMove(move);
+    screenMove(moves[Math.floor(Math.random() * moves.length)]);
     count++;
   }, 260);
 }
@@ -647,8 +532,7 @@ function solveCube() {
   if (moveHistory.length === 0) return;
   const titleEl = document.getElementById('method-title');
   const originalTitle = titleEl.innerText;
-  let reverseMoves = moveHistory.slice().reverse().map(m => m.endsWith('_prime') ? m.replace('_prime','') : m + '_prime');
-  reverseMoves = normalizeMoves(reverseMoves);
+  const reverseMoves = moveHistory.slice().reverse().map(m => m.endsWith('_prime') ? m.replace('_prime','') : m + '_prime');
   titleEl.innerText = 'Analyzing scramble...';
   setSolveInfo(pickRandom(solveMessages.scan));
   setTimeout(() => {
@@ -672,45 +556,12 @@ function solveCube() {
             return;
           }
           titleEl.innerText = `Solving (${total - idx}/${total})...`;
-          let move = reverseMoves[idx];
-          if (move.endsWith("'")) {
-            screenMove(move[0] + '_prime');
-          } else {
-            screenMove(move);
-          }
+          screenMove(reverseMoves[idx]);
           idx++;
         }, 320);
       }, 900);
     }, 1100);
   }, 1100);
-}
-function normalizeMoves(moves) {
-  const result = [];
-  let i = 0;
-  while (i < moves.length) {
-    const m = moves[i];
-    const face = m[0];
-    const prime = m.endsWith("'");
-    let count = 1;
-    let j = i + 1;
-    while (j < moves.length && moves[j][0] === face && moves[j].endsWith("'") === prime) {
-      count++;
-      j++;
-    }
-    const mod = count % 4;
-    if (mod === 0) {
-      // cancels out
-    } else if (mod === 1) {
-      result.push(face + (prime ? "'" : ""));
-    } else if (mod === 2) {
-      result.push(face + (prime ? "'" : ""));
-      result.push(face + (prime ? "'" : ""));
-    } else if (mod === 3) {
-      result.push(face + (prime ? "" : "'"));
-    }
-    i = j;
-  }
-  return result;
 }
 function resetCube() { location.reload(); }
 function resetView() { snapAndReorient('front'); }
