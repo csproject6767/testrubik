@@ -289,7 +289,7 @@ const paintColors = {
 };
 let isRotating = false, isChangingView = false;
 let currentView = { theta: 0, phi: 0.3 };
-const zoomDistance = 12;
+const zoomDistance = 10;
 // --- Solve commentary + helpers ---
 const solveMessages = {
   scan: [
@@ -357,6 +357,7 @@ function startPaintMode() {
   paintMode = true;
   cubeGroup.visible = false;
   inputCubeGroup.visible = true;
+  snapAndReorient('front');
   document.getElementById('paint-palette').style.display = 'flex';
 }
 function exitPaintMode() {
@@ -429,20 +430,20 @@ function setup3D() {
           new THREE.BoxGeometry(0.95, 0.95, 0.95),
           grayMats
         );
-        ic.position.set(x * 1.4, y * 1.4, z * 1.4);
+        ic.position.set(x, y, z);
         inputCubies.push(ic);
         inputCubeGroup.add(ic);
       }
     }
   }
-  inputCubeGroup.position.set(-5, 0, 0);
-  inputCubeGroup.visible = false; // hidden by default
+  inputCubeGroup.position.set(2.5, 0, 0);
+  inputCubeGroup.visible = false;
   camera.position.set(
     zoomDistance * Math.cos(currentView.phi) * Math.sin(currentView.theta),
     zoomDistance * Math.sin(currentView.phi),
     zoomDistance * Math.cos(currentView.phi) * Math.cos(currentView.theta)
   );
-  camera.lookAt(0, 0, 0);
+  camera.lookAt(0.8, 0, 0);
   renderer.domElement.addEventListener('pointerdown', onPointerDown);
   animate();
 }
@@ -466,7 +467,7 @@ function snapAndReorient(targetFace) {
         zoomDistance * Math.sin(currentView.phi),
         zoomDistance * Math.cos(currentView.phi) * Math.cos(currentView.theta)
       );
-      camera.lookAt(0, 0, 0);
+      camera.lookAt(0.8, 0, 0);
     },
     onComplete: () => { isChangingView = false; }
   });
