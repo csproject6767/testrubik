@@ -359,6 +359,7 @@ function startPaintMode() {
   paintMode = true;
   cubeGroup.visible = false;
   inputCubeGroup.visible = true;
+  inputCubeGroup.position.set(2.0, 0, 0);
   snapAndReorient('front');
   document.getElementById('paint-palette').style.display = 'flex';
 }
@@ -372,9 +373,12 @@ function selectPaintColor(face) {
   currentPaintColor = paintColors[face];
 }
 function buildStickerString() {
-  // Simple stub - returns a solved cube string for testing
-  // Replace with real reading of inputCubies colors when ready
+  // Stub - returns solved state for testing
   return 'UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB';
+}
+function applyPaintToMainCube() {
+  // Stub - would copy colors from inputCubies to cubies
+  // Not needed yet since we don't have real state reading
 }
 function playSolutionOnMainCube(moves) {
   cubeGroup.visible = true;
@@ -409,6 +413,7 @@ function startSolvingPaintedCube() {
     const solution = Cube.solve(stickerString);
     const rawMoves = solution.trim().split(/\s+/);
     const niceMoves = normalizeMoves(rawMoves);
+    applyPaintToMainCube();
     playSolutionOnMainCube(niceMoves);
     exitPaintMode();
   } catch (e) {
