@@ -373,6 +373,34 @@ function startSolvingPaintedCube() {
   alert('Painted cube ready – now plug in solver logic here.');
   exitPaintMode();
 }
+function lockInputCubeCenters() {
+  inputCubies.forEach(c => {
+    const x = Math.round(c.position.x);
+    const y = Math.round(c.position.y);
+    const z = Math.round(c.position.z);
+    const isCenter = ((Math.abs(x) === 1 && y === 0 && z === 0) ||
+                      (Math.abs(y) === 1 && x === 0 && z === 0) ||
+                      (Math.abs(z) === 1 && x === 0 && y === 0));
+    if (!isCenter) return;
+    let faceLetter;
+    if (x === 1) faceLetter = 'R';
+    else if (x === -1) faceLetter = 'L';
+    else if (y === 1) faceLetter = 'U';
+    else if (y === -1) faceLetter = 'D';
+    else if (z === 1) faceLetter = 'F';
+    else if (z === -1) faceLetter = 'B';
+    const color = paintColors[faceLetter];
+    let matIndex = 0;
+    if (faceLetter === 'R') matIndex = 0; // +X
+    else if (faceLetter === 'L') matIndex = 1; // -X
+    else if (faceLetter === 'U') matIndex = 2; // +Y
+    else if (faceLetter === 'D') matIndex = 3; // -Y
+    else if (faceLetter === 'F') matIndex = 4; // +Z
+    else if (faceLetter === 'B') matIndex = 5; // -Z
+    c.material[matIndex].color.set(color);
+    c.material[matIndex].userData.lockedCenter = true;
+  });
+}
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 function onPointerDown(event) {
@@ -388,6 +416,7 @@ function onPointerDown(event) {
   const faceIndex = Math.floor(hit.faceIndex / 2);
   const mat = mesh.material[faceIndex];
   if (!mat) return;
+  if (mat.userData.lockedCenter) return;
   mat.color.set(currentPaintColor);
 }
 function setup3D() {
@@ -436,8 +465,9 @@ function setup3D() {
       }
     }
   }
-  inputCubeGroup.position.set(2.5, 0, 0);
+  inputCubeGroup.position.set(2.0, 0, 0);
   inputCubeGroup.visible = false;
+  lockInputCubeCenters();
   camera.position.set(
     zoomDistance * Math.cos(currentView.phi) * Math.sin(currentView.theta),
     zoomDistance * Math.sin(currentView.phi),
