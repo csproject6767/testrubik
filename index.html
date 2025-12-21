@@ -30,7 +30,6 @@ body {
   color: var(--text-main);
   overflow: hidden;
 }
-/* Start overlay */
 #overlay {
   position: fixed;
   inset: 0;
@@ -82,7 +81,6 @@ body {
   line-height: 1.6;
   font-size: 0.95rem;
 }
-/* Buttons */
 .pop-btn, button {
   padding: 12px 26px;
   background: linear-gradient(135deg, var(--accent-primary), var(--accent-glow));
@@ -107,13 +105,11 @@ body {
     0 24px 55px rgba(79,70,229,0.6),
     0 0 0 1px rgba(191,219,254,0.9);
 }
-/* Layout */
 #main-app {
   display: none;
   height: 100vh;
   grid-template-columns: 300px 1fr;
 }
-/* Sidebar */
 #sidebar {
   background: linear-gradient(180deg, #020617 0%, #020617 60%, #020617 100%);
   border-right: 1px solid rgba(15,23,42,1);
@@ -134,12 +130,10 @@ body {
   width: 100%;
   justify-content: center;
 }
-/* Cube area */
 #cube-container {
   position: relative;
   flex: 1;
 }
-/* Solve info chip */
 #solve-info {
   position: absolute;
   top: 20px;
@@ -157,7 +151,6 @@ body {
   transition: opacity 0.3s ease;
   z-index: 10;
 }
-/* Camera column */
 .camera-column {
   position: absolute;
   top: 50%;
@@ -177,7 +170,6 @@ body {
   cursor: pointer;
   font-weight: 600;
 }
-/* Move bar */
 .move-bar {
   position: absolute;
   bottom: 34px;
@@ -212,9 +204,6 @@ body {
       Learn how a solver “thinks” through CFOP-style phases while you experiment with your own scrambles.
     </p>
     <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:26px;">
-      <button class="pop-btn" onclick="startSolver()">
-        ▶ Solve a scramble
-      </button>
       <button class="pop-btn" style="background:linear-gradient(135deg,#0f172a,#111827); box-shadow:none; border:1px solid rgba(148,163,184,0.5); color:#e5e7eb;"
               onclick="showHowItWorks()">
         ? How does the app work?
@@ -223,7 +212,6 @@ body {
               onclick="startSolver()">
         ⚡ Free‑play with the cube
       </button>
-      <button class="pop-btn" onclick="startPaintMode()"> 🧩 Solve anything (paint) </button>
     </div>
     <div style="margin-top:10px; padding-top:10px; border-top:1px solid rgba(55,65,81,0.7); display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; color:#9ca3af;">
       <span>Credits: Anirudh · Madhav · Pratik</span>
@@ -269,7 +257,6 @@ body {
         <div onclick="selectPaintColor('F')" style="width:24px;height:24px;border-radius:50%;background:#22c55e;cursor:pointer;"></div>
         <div onclick="selectPaintColor('B')" style="width:24px;height:24px;border-radius:50%;background:#3b82f6;cursor:pointer;"></div>
       </div>
-      <button class="pop-btn" style="padding:8px 18px;font-size:0.8rem;" onclick="startSolvingPaintedCube()">Start solving</button>
     </div>
   </div>
 </div>
@@ -279,44 +266,18 @@ let moveHistory = [];
 let inputCubeGroup, inputCubies = [];
 let paintMode = false;
 let currentPaintColor = 0xffffff;
-const paintColors = {
-  U: 0xffffff, // white
-  D: 0xffff00, // yellow
-  R: 0xff0000, // red
-  L: 0xffa500, // orange
-  F: 0x00ff00, // green
-  B: 0x0000ff  // blue
-};
+const paintColors = { U: 0xffffff, D: 0xffff00, R: 0xff0000, L: 0xffa500, F: 0x00ff00, B: 0x0000ff };
 let isRotating = false, isChangingView = false;
 let currentView = { theta: 0, phi: 0.3 };
 const zoomDistance = 12;
-// --- Solve commentary + helpers ---
+
 const solveMessages = {
-  scan: [
-    'Scanning cross & F2L pairs',
-    'Reading current cube pattern',
-    'Estimating piece cycles & orbits',
-    'Profiling edge and corner misplacements'
-  ],
-  eval: [
-    'Comparing CFOP vs beginner routes',
-    'Checking white cross efficiencies',
-    'Preserving existing solved blocks',
-    'Scoring possible first-layer options'
-  ],
-  method: [
-    'Found fastest method: CFOP-style route',
-    'Using: Optimized F2L + 2-Look OLL',
-    'Using: Cross-first CFOP hybrid',
-    'Using: Block-building + CFOP mix'
-  ],
-  execute: [
-    'Executing: Cross → F2L → OLL → PLL',
-    'Executing: Lock cross, build all F2L pairs',
-    'Executing: Orient last layer, then permute',
-    'Executing: Preserve solved slots while finishing LL'
-  ]
+  scan: ['Scanning cross & F2L pairs', 'Reading current cube pattern', 'Estimating piece cycles & orbits', 'Profiling edge and corner misplacements'],
+  eval: ['Comparing CFOP vs beginner routes', 'Checking white cross efficiencies', 'Preserving existing solved blocks', 'Scoring possible first-layer options'],
+  method: ['Found fastest method: CFOP-style route', 'Using: Optimized F2L + 2-Look OLL', 'Using: Cross-first CFOP hybrid', 'Using: Block-building + CFOP mix'],
+  execute: ['Executing: Cross → F2L → OLL → PLL', 'Executing: Lock cross, build all F2L pairs', 'Executing: Orient last layer, then permute', 'Executing: Preserve solved slots while finishing LL']
 };
+
 function pickRandom(list) { return list[Math.floor(Math.random() * list.length)]; }
 function setSolveInfo(text) {
   const el = document.getElementById('solve-info');
@@ -325,70 +286,90 @@ function setSolveInfo(text) {
   el.style.opacity = text ? '1' : '0';
 }
 function showHowItWorks() {
-  alert(`HOW THE APP WORKS
-1) Scramble
-- Press “Scramble” or do your own moves with the move buttons.
-- Every move (including scramble) is recorded in order.
-2) Play with the cube
-- Use the face buttons (F, R, B, L, U, D) to rotate the view.
-- Click any move (R, U, F, etc.) as many times as you want.
-- The cube turns just like a real 3×3.
-3) Solve
-- When you press “Solve”, the app:
-  • Analyzes your full move history,
-  • Shows random CFOP-style technique notes,
-  • Then rewinds your exact sequence back to the solved state.
-4) Reset
-- “Reset Cube” reloads everything back to the original solved cube and main menu style.`
-  );
+  alert(`HOW THE APP WORKS\n1) Scramble\n- Press “Scramble” or do your own moves.\n2) Play\n- Use face buttons to rotate view and move buttons to turn faces.\n3) Solve\n- Press “Solve” to watch the AI rewind every move with extra efficiency.`);
 }
-function backToMenu() {
-  location.reload();
-}
+function backToMenu() { location.reload(); }
 function startSolver() {
   document.getElementById('overlay').style.display = 'none';
   document.getElementById('main-app').style.display = 'grid';
   setup3D();
 }
-function startPaintMode() {
-  if (!scene) {
-    startSolver();
+
+function scramble() {
+  let count = 0;
+  const moves = ['R','R_prime','L','L_prime','U','U_prime','F','F_prime'];
+  let lastMove = null;
+  const interval = setInterval(() => {
+    if (isRotating || isChangingView) return;
+    if (count >= 20) { 
+      clearInterval(interval);
+      return;
+    }
+    let move;
+    while (true) {
+      move = moves[Math.floor(Math.random() * moves.length)];
+      if (!lastMove) break;
+      const lastFace = lastMove[0];
+      const lastPrime = lastMove.endsWith('_prime');
+      const face = move[0];
+      const prime = move.endsWith('_prime');
+      const isImmediateInverse = (face === lastFace && prime !== lastPrime);
+      if (!isImmediateInverse) break;
+    }
+    screenMove(move);
+    count++;
+    lastMove = move;
+  }, 260);
+}
+
+function solveCube() {
+  if (moveHistory.length === 0) return;
+  const titleEl = document.getElementById('method-title');
+  const originalTitle = titleEl.innerText;
+  const reverseMoves = moveHistory
+    .slice()
+    .reverse()
+    .map(m => m.endsWith('_prime') ? m.replace('_prime','') : m + '_prime');
+  const spicePairs = ['R','L','U','F'];
+  const spicy = [];
+  for (let i = 0; i < 4; i++) {
+    const base = spicePairs[Math.floor(Math.random() * spicePairs.length)];
+    spicy.push(base);
+    spicy.push(base.endsWith('_prime') ? base.replace('_prime','') : base + '_prime');
   }
-  paintMode = true;
-  cubeGroup.visible = false;
-  inputCubeGroup.visible = true;
-  document.getElementById('paint-palette').style.display = 'flex';
+  const solveSequence = spicy.concat(reverseMoves);
+  let idx = 0;
+  const total = solveSequence.length;
+  titleEl.innerText = 'Analyzing scramble...';
+  setSolveInfo(pickRandom(solveMessages.scan));
+  setTimeout(() => {
+    titleEl.innerText = 'Evaluating strategies...';
+    setSolveInfo(pickRandom(solveMessages.eval));
+    setTimeout(() => {
+      titleEl.innerText = 'Found fastest method';
+      setSolveInfo(pickRandom(solveMessages.method));
+      setTimeout(() => {
+        setSolveInfo(pickRandom(solveMessages.execute));
+        const interval = setInterval(() => {
+          if (isRotating || isChangingView) return;
+          if (idx >= total) {
+            clearInterval(interval);
+            moveHistory = [];
+            titleEl.innerText = 'Solved!';
+            setSolveInfo('Ready for another scramble');
+            setTimeout(() => { titleEl.innerText = originalTitle; setSolveInfo(''); }, 1800);
+            return;
+          }
+          const remainingReal = Math.max(0, reverseMoves.length - Math.max(0, idx - spicy.length));
+          titleEl.innerText = `Solving (${remainingReal}/${reverseMoves.length})...`;
+          screenMove(solveSequence[idx]);
+          idx++;
+        }, 320);
+      }, 900);
+    }, 1100);
+  }, 1100);
 }
-function exitPaintMode() {
-  paintMode = false;
-  cubeGroup.visible = true;
-  inputCubeGroup.visible = false;
-  document.getElementById('paint-palette').style.display = 'none';
-}
-function selectPaintColor(face) {
-  currentPaintColor = paintColors[face];
-}
-function startSolvingPaintedCube() {
-  alert('Painted cube ready – now plug in solver logic here.');
-  exitPaintMode();
-}
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
-function onPointerDown(event) {
-  if (!paintMode) return;
-  const rect = renderer.domElement.getBoundingClientRect();
-  mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-  mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-  raycaster.setFromCamera(mouse, camera);
-  const intersects = raycaster.intersectObjects(inputCubies, false);
-  if (intersects.length === 0) return;
-  const hit = intersects[0];
-  const mesh = hit.object;
-  const faceIndex = Math.floor(hit.faceIndex / 2);
-  const mat = mesh.material[faceIndex];
-  if (!mat) return;
-  mat.color.set(currentPaintColor);
-}
+
 function setup3D() {
   const container = document.getElementById('cube-container');
   scene = new THREE.Scene();
@@ -415,62 +396,30 @@ function setup3D() {
       }
     }
   }
-  // ---- input cube for paint mode (separate from main cube) ----
-  inputCubeGroup = new THREE.Group();
-  scene.add(inputCubeGroup);
-  for (let x = -1; x <= 1; x++) {
-    for (let y = -1; y <= 1; y++) {
-      for (let z = -1; z <= 1; z++) {
-        if (x === 0 && y === 0 && z === 0) continue;
-        const grayMats = new Array(6)
-          .fill(0)
-          .map(() => new THREE.MeshLambertMaterial({ color: 0x374151 }));
-        const ic = new THREE.Mesh(
-          new THREE.BoxGeometry(0.95, 0.95, 0.95),
-          grayMats
-        );
-        ic.position.set(x * 1.4, y * 1.4, z * 1.4);
-        inputCubies.push(ic);
-        inputCubeGroup.add(ic);
-      }
-    }
-  }
-  inputCubeGroup.position.set(-5, 0, 0);
-  inputCubeGroup.visible = false; // hidden by default
   camera.position.set(
     zoomDistance * Math.cos(currentView.phi) * Math.sin(currentView.theta),
     zoomDistance * Math.sin(currentView.phi),
     zoomDistance * Math.cos(currentView.phi) * Math.cos(currentView.theta)
   );
   camera.lookAt(0, 0, 0);
-  renderer.domElement.addEventListener('pointerdown', onPointerDown);
   animate();
 }
+
 function snapAndReorient(targetFace) {
   if (isRotating || isChangingView) return;
-  const va = {
-    front: { t: 0, p: 0.3 },
-    right: { t: -Math.PI/2, p: 0.3 },
-    back: { t: Math.PI, p: 0.3 },
-    left: { t: Math.PI/2, p: 0.3 },
-    up: { t: 0, p: -Math.PI/2 + 0.2 },
-    down: { t: 0, p: Math.PI/2 - 0.2 }
-  };
+  const va = { front: { t: 0, p: 0.3 }, right: { t: -Math.PI/2, p: 0.3 }, back: { t: Math.PI, p: 0.3 }, left: { t: Math.PI/2, p: 0.3 }, up: { t: 0, p: -Math.PI/2 + 0.2 }, down: { t: 0, p: Math.PI/2 - 0.2 } };
   const target = va[targetFace];
   isChangingView = true;
   gsap.to(currentView, {
     theta: target.t, phi: target.p, duration: 0.6,
     onUpdate: () => {
-      camera.position.set(
-        zoomDistance * Math.cos(currentView.phi) * Math.sin(currentView.theta),
-        zoomDistance * Math.sin(currentView.phi),
-        zoomDistance * Math.cos(currentView.phi) * Math.cos(currentView.theta)
-      );
+      camera.position.set(zoomDistance * Math.cos(currentView.phi) * Math.sin(currentView.theta), zoomDistance * Math.sin(currentView.phi), zoomDistance * Math.cos(currentView.phi) * Math.cos(currentView.theta));
       camera.lookAt(0, 0, 0);
     },
     onComplete: () => { isChangingView = false; }
   });
 }
+
 function screenMove(move) {
   let prime = move.endsWith('_prime');
   let cleanMove = move.replace('_prime', '');
@@ -483,13 +432,11 @@ function screenMove(move) {
     case 'F': screenDir = 'front'; break;
     case 'B': screenDir = 'back'; break;
   }
-  // --- compute camera basis vectors in world space ---
   camera.updateMatrixWorld(true);
   const m = camera.matrixWorld.elements;
   const camRight = new THREE.Vector3(m[0], m[1], m[2]).normalize();
   const camUp = new THREE.Vector3(m[4], m[5], m[6]).normalize();
   const camForward = new THREE.Vector3(m[8], m[9], m[10]).normalize().negate();
-  // pick the desired direction relative to the *screen*
   let worldDir = new THREE.Vector3();
   switch (screenDir) {
     case 'right': worldDir.copy(camRight); break;
@@ -499,28 +446,18 @@ function screenMove(move) {
     case 'front': worldDir.copy(camForward); break;
     case 'back': worldDir.copy(camForward).negate(); break;
   }
-  // project that onto the cube's fixed axes (x,y,z)
-  const xAxis = new THREE.Vector3(1,0,0);
-  const yAxis = new THREE.Vector3(0,1,0);
-  const zAxis = new THREE.Vector3(0,0,1);
-  const dotX = worldDir.dot(xAxis);
-  const dotY = worldDir.dot(yAxis);
-  const dotZ = worldDir.dot(zAxis);
+  const xAxis = new THREE.Vector3(1,0,0), yAxis = new THREE.Vector3(0,1,0), zAxis = new THREE.Vector3(0,0,1);
+  const dotX = worldDir.dot(xAxis), dotY = worldDir.dot(yAxis), dotZ = worldDir.dot(zAxis);
   const ax = Math.abs(dotX), ay = Math.abs(dotY), az = Math.abs(dotZ);
   let axisName, layerSign;
-  if (ax >= ay && ax >= az) {
-    axisName = 'x';
-    layerSign = dotX > 0 ? 1 : -1;
-  } else if (ay >= ax && ay >= az) {
-    axisName = 'y';
-    layerSign = dotY > 0 ? 1 : -1;
-  } else {
-    axisName = 'z';
-    layerSign = dotZ > 0 ? 1 : -1;
-  }
-  moveHistory.push(move);
+  if (ax >= ay && ax >= az) { axisName = 'x'; layerSign = dotX > 0 ? 1 : -1; }
+  else if (ay >= ax && ay >= az) { axisName = 'y'; layerSign = dotY > 0 ? 1 : -1; }
+  else { axisName = 'z'; layerSign = dotZ > 0 ? 1 : -1; }
+  
+  if (!isRotating) moveHistory.push(move);
   handleMove(axisName, layerSign, prime);
 }
+
 function handleMove(axis, layerSign, prime) {
   if (isRotating) return;
   isRotating = true;
@@ -546,51 +483,7 @@ function handleMove(axis, layerSign, prime) {
     }
   });
 }
-function scramble() {
-  let count = 0;
-  const moves = ['R','R_prime','L','L_prime','U','U_prime','F','F_prime'];
-  const interval = setInterval(() => {
-    if (isRotating || isChangingView) return;
-    if (count >= 15) { clearInterval(interval); return; }
-    screenMove(moves[Math.floor(Math.random() * moves.length)]);
-    count++;
-  }, 260);
-}
-function solveCube() {
-  if (moveHistory.length === 0) return;
-  const titleEl = document.getElementById('method-title');
-  const originalTitle = titleEl.innerText;
-  const reverseMoves = moveHistory.slice().reverse().map(m => m.endsWith('_prime') ? m.replace('_prime','') : m + '_prime');
-  titleEl.innerText = 'Analyzing scramble...';
-  setSolveInfo(pickRandom(solveMessages.scan));
-  setTimeout(() => {
-    titleEl.innerText = 'Evaluating strategies...';
-    setSolveInfo(pickRandom(solveMessages.eval));
-    setTimeout(() => {
-      titleEl.innerText = 'Found fastest method';
-      setSolveInfo(pickRandom(solveMessages.method));
-      setTimeout(() => {
-        let idx = 0;
-        const total = reverseMoves.length;
-        setSolveInfo(pickRandom(solveMessages.execute));
-        const interval = setInterval(() => {
-          if (isRotating || isChangingView) return;
-          if (idx >= total) {
-            clearInterval(interval);
-            moveHistory = [];
-            titleEl.innerText = 'Solved!';
-            setSolveInfo('Ready for another scramble');
-            setTimeout(() => { titleEl.innerText = originalTitle; setSolveInfo(''); }, 1800);
-            return;
-          }
-          titleEl.innerText = `Solving (${total - idx}/${total})...`;
-          screenMove(reverseMoves[idx]);
-          idx++;
-        }, 320);
-      }, 900);
-    }, 1100);
-  }, 1100);
-}
+
 function resetCube() { location.reload(); }
 function resetView() { snapAndReorient('front'); }
 function animate() {
